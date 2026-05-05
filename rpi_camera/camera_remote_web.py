@@ -556,10 +556,10 @@ class CameraRemoteServer:
                     await asyncio.sleep(0.05)
                     continue
 
-                await response.write(b'--frame\\r\\n')
-                await response.write(b'Content-Type: image/jpeg\\r\\n\\r\\n')
+                await response.write(b'--frame\r\n')
+                await response.write(b'Content-Type: image/jpeg\r\n\r\n')
                 await response.write(encoded.tobytes())
-                await response.write(b'\\r\\n')
+                await response.write(b'\r\n')
                 await asyncio.sleep(0.03)
         except (asyncio.CancelledError, ConnectionResetError, RuntimeError):
             pass

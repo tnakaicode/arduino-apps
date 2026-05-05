@@ -18,10 +18,11 @@ from PIL import Image, ImageDraw, ImageFont
 
 #  cd /home/rpi/arduino-apps && pgrep -af "rpi_camera/camera_remote_web.py" || true && ss -lntp | grep ':5000' || true
 #  cd /home/rpi/arduino-apps && nohup python rpi_camera/camera_remote_web.py > rpi_camera/camera_remote_web.nohup.log 2>&1 < /dev/null & echo $! && sleep 1 && pgrep -af "rpi_camera/camera_remote_web.py" && ss -lntp | grep ':5000' || true
+#  cd /home/rpi/arduino-apps && pkill -f rpi_camera/camera_remote_web.py || true && nohup python rpi_camera/camera_remote_web.py > rpi_camera/camera_remote_web.nohup.log 2>&1 < /dev/null & echo $! && sleep 1 && pgrep -af "rpi_camera/camera_remote_web.py" && ss -lntp | grep ':5000' || true
 
 HOST = '0.0.0.0'
 WEB_PORT = 5000
-CAMERA_PORT = '/dev/video0'
+CAMERA_PORT = '/dev/video1'
 AUTO_CONNECT = True
 
 TARGET_FPS = 30.0
@@ -666,14 +667,63 @@ class CameraRemoteServer:
             return True
 
     def _list_devices(self):
-        return [{'index': 0, 'label': self.camera_port}]
+        devices = []
+        for p in sorted(Path('/dev').glob('video*')):
+            devices.append({'label': str(p)})
+        if not devices:
+            devices.append({'label': self.camera_port})
+        return devices
+
+    def _camera_open_candidates(self):
+        candidates = [(self.camera_port, cv2.CAP_V4L2), (self.camera_port, None)]
+
+        # Fallback: try all available /dev/video* nodes when configured path is unavailable.
+        extra_paths = sorted(Path('/dev').glob('video*'))
+        for p in extra_paths:
+            sp = str(p)
+            if sp == self.camera_port:
+                continue
+            candidates.extend([(sp, cv2.CAP_V4L2), (sp, None)])
+
+        # Final fallback: if source is /dev/videoN, try index N directly.
+        if isinstance(self.camera_port, str) and self.camera_port.startswith('/dev/video'):
+            suffix = self.camera_port[len('/dev/video'):]
+            if suffix.isdigit():
+                idx = int(suffix)
+                candidates.extend([(idx, cv2.CAP_V4L2), (idx, None)])
+
+        deduped = []
+        seen = set()
+        for source, backend in candidates:
+            key = (str(source), backend)
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped.append((source, backend))
+        return deduped
 
     def connect_camera(self):
         self.disconnect_camera()
-        cap = cv2.VideoCapture(self.camera_port, cv2.CAP_V4L2)
-        if not cap.isOpened():
-            cap.release()
-            raise RuntimeError(f'failed to open camera port={self.camera_port}')
+        cap = None
+        errors = []
+        for source, backend in self._camera_open_candidates():
+            if backend is None:
+                trial = cv2.VideoCapture(source)
+            else:
+                trial = cv2.VideoCapture(source, backend)
+
+            if trial.isOpened():
+                cap = trial
+                break
+
+            errors.append(f'source={source} backend={backend}')
+            trial.release()
+
+        if cap is None:
+            details = ', '.join(errors)
+            raise RuntimeError(
+                f'failed to open camera port={self.camera_port}; tried: {details}'
+            )
 
         cap.set(cv2.CAP_PROP_FPS, self.target_fps)
         self.cap = cap
@@ -999,8 +1049,14 @@ class CameraRemoteServer:
         return web.json_response({'devices': self._list_devices(), 'camera_port': self.camera_port})
 
     async def api_connect(self, request):
-        self.connect_camera()
-        return web.json_response({'ok': True, 'camera_port': self.camera_port})
+        try:
+            self.connect_camera()
+            return web.json_response({'ok': True, 'camera_port': self.camera_port})
+        except Exception as exc:
+            return web.json_response(
+                {'ok': False, 'error': str(exc), 'camera_port': self.camera_port},
+                status=400,
+            )
 
     async def api_disconnect(self, request):
         self.disconnect_camera()

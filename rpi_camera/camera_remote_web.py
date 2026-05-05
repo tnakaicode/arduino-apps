@@ -1,4 +1,3 @@
-import argparse
 import asyncio
 import contextlib
 import glob
@@ -9,6 +8,12 @@ from datetime import datetime
 
 import cv2
 from aiohttp import web
+
+
+HOST = '0.0.0.0'
+WEB_PORT = 5000
+CAMERA_PORT = '/dev/video0'
+AUTO_CONNECT = True
 
 
 HTML_PAGE = """<!doctype html>
@@ -236,56 +241,47 @@ HTML_PAGE = """<!doctype html>
 
 
 class CameraRemoteServer:
-    def __init__(self, host="0.0.0.0", port=5000, out_dir=None):
-        self.host = host
-        self.port = port
-        self.out_dir = out_dir or os.path.join(os.path.dirname(__file__), "output")
-        os.makedirs(self.out_dir, exist_ok=True)
+  def __init__(self, host="0.0.0.0", port=5000, camera_port='/dev/video0', out_dir=None):
+    self.host = host
+    self.port = port
+    self.camera_port = camera_port
+    self.out_dir = out_dir or os.path.join(os.path.dirname(__file__), "output")
+    os.makedirs(self.out_dir, exist_ok=True)
 
-        self.cap = None
-        self.device_index = 0
-        self.overlay_text = ""
+    self.cap = None
+    self.device_index = 0
+    self.overlay_text = ""
 
-        self.frame_lock = threading.Lock()
-        self.latest_frame = None
+    self.frame_lock = threading.Lock()
+    self.latest_frame = None
 
-        self.connected = False
-        self.recording = False
-        self.video_writer = None
+    self.connected = False
+    self.recording = False
+    self.video_writer = None
 
-        self._frame_counter = 0
-        self._fps = 0.0
-        self._fps_last_tick = time.time()
+    self._frame_counter = 0
+    self._fps = 0.0
+    self._fps_last_tick = time.time()
 
-        self.stop_event = threading.Event()
-        self.capture_thread = threading.Thread(target=self._capture_loop, daemon=True)
-        self.capture_thread.start()
+    self.stop_event = threading.Event()
+    self.capture_thread = threading.Thread(target=self._capture_loop, daemon=True)
+    self.capture_thread.start()
 
-    def _list_devices(self):
-        devices = []
-        for path in sorted(glob.glob('/dev/video*')):
-            suffix = path.replace('/dev/video', '')
-            if suffix.isdigit():
-                devices.append({'index': int(suffix), 'label': path})
+  def _list_devices(self):
+        return [{'index': 0, 'label': self.camera_port}]
 
-        if not devices:
-            for idx in range(5):
-                devices.append({'index': idx, 'label': f'Camera {idx}'})
-
-        return devices
-
-    def connect_camera(self, index):
+  def connect_camera(self, index=0):
         self.disconnect_camera()
-        cap = cv2.VideoCapture(index)
+        cap = cv2.VideoCapture(self.camera_port, cv2.CAP_V4L2)
         if not cap.isOpened():
             cap.release()
-            raise RuntimeError(f'failed to open camera index={index}')
+            raise RuntimeError(f'failed to open camera port={self.camera_port}')
 
         self.cap = cap
-        self.device_index = index
+        self.device_index = 0
         self.connected = True
 
-    def disconnect_camera(self):
+  def disconnect_camera(self):
         self.stop_recording()
         if self.cap is not None:
             self.cap.release()
@@ -294,10 +290,10 @@ class CameraRemoteServer:
         with self.frame_lock:
             self.latest_frame = None
 
-    def _now_stamp(self):
+  def _now_stamp(self):
         return datetime.now().strftime('%Y%m%d_%H%M%S')
 
-    def _overlay(self, frame):
+  def _overlay(self, frame):
         out = frame.copy()
         stamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         lines = [stamp, f'FPS: {self._fps:.1f}']
@@ -321,7 +317,7 @@ class CameraRemoteServer:
             y += 28
         return out
 
-    def _capture_loop(self):
+  def _capture_loop(self):
         while not self.stop_event.is_set():
             if self.cap is None:
                 time.sleep(0.05)
@@ -347,7 +343,7 @@ class CameraRemoteServer:
                 self._frame_counter = 0
                 self._fps_last_tick = now
 
-    def save_image(self):
+  def save_image(self):
         with self.frame_lock:
             frame = None if self.latest_frame is None else self.latest_frame.copy()
         if frame is None:
@@ -358,7 +354,7 @@ class CameraRemoteServer:
             raise RuntimeError('failed to save image')
         return path
 
-    def start_recording(self):
+  def start_recording(self):
         if self.recording:
             return None
 
@@ -378,13 +374,13 @@ class CameraRemoteServer:
         self.recording = True
         return path
 
-    def stop_recording(self):
+  def stop_recording(self):
         if self.video_writer is not None:
             self.video_writer.release()
             self.video_writer = None
         self.recording = False
 
-    def status(self):
+  def status(self):
         resolution = None
         with self.frame_lock:
             if self.latest_frame is not None:
@@ -397,46 +393,47 @@ class CameraRemoteServer:
             'fps': float(self._fps),
             'resolution': resolution,
             'current_index': self.device_index,
+          'camera_port': self.camera_port,
             'output_dir': self.out_dir,
         }
 
-    async def index(self, request):
+  async def index(self, request):
         return web.Response(text=HTML_PAGE, content_type='text/html')
 
-    async def api_status(self, request):
+  async def api_status(self, request):
         return web.json_response(self.status())
 
-    async def api_devices(self, request):
+  async def api_devices(self, request):
         return web.json_response({'devices': self._list_devices(), 'current_index': self.device_index})
 
-    async def api_connect(self, request):
+  async def api_connect(self, request):
         data = await request.json()
         index = int(data.get('index', 0))
         self.connect_camera(index)
         return web.json_response({'ok': True, 'index': index})
 
-    async def api_disconnect(self, request):
+  async def api_disconnect(self, request):
         self.disconnect_camera()
         return web.json_response({'ok': True})
 
-    async def api_save_image(self, request):
+  async def api_save_image(self, request):
         path = self.save_image()
         return web.json_response({'ok': True, 'path': path})
 
-    async def api_start_recording(self, request):
+  async def api_start_recording(self, request):
         path = self.start_recording()
         return web.json_response({'ok': True, 'path': path})
 
-    async def api_stop_recording(self, request):
+  async def api_stop_recording(self, request):
         self.stop_recording()
         return web.json_response({'ok': True})
 
-    async def api_overlay_text(self, request):
+  async def api_overlay_text(self, request):
         data = await request.json()
         self.overlay_text = str(data.get('text', '')).strip()
         return web.json_response({'ok': True, 'text': self.overlay_text})
 
-    async def stream(self, request):
+  async def stream(self, request):
         response = web.StreamResponse(
             status=200,
             headers={
@@ -473,7 +470,7 @@ class CameraRemoteServer:
 
         return response
 
-    def _blank_frame(self):
+  def _blank_frame(self):
         img = cv2.UMat(480, 640, cv2.CV_8UC3).get()
         cv2.putText(
             img,
@@ -487,7 +484,7 @@ class CameraRemoteServer:
         )
         return img
 
-    def make_app(self):
+  def make_app(self):
         app = web.Application()
         app.router.add_get('/', self.index)
         app.router.add_get('/stream.mjpg', self.stream)
@@ -510,28 +507,18 @@ class CameraRemoteServer:
         return app
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(description='Headless camera server. Open from another PC browser.')
-    parser.add_argument('--host', default='0.0.0.0', help='bind host')
-    parser.add_argument('--port', type=int, default=5000, help='bind port')
-    parser.add_argument('--device-index', type=int, default=0, help='camera index to auto connect at startup')
-    parser.add_argument('--no-auto-connect', action='store_true', help='do not connect camera at startup')
-    return parser.parse_args()
-
-
 def main():
-    args = parse_args()
-    server = CameraRemoteServer(host=args.host, port=args.port)
+    server = CameraRemoteServer(host=HOST, port=WEB_PORT, camera_port=CAMERA_PORT)
 
-    if not args.no_auto_connect:
+    if AUTO_CONNECT:
         try:
-            server.connect_camera(args.device_index)
-            print(f'[Camera] connected to index={args.device_index}')
+            server.connect_camera()
+            print(f'[Camera] connected to port={CAMERA_PORT}')
         except Exception as exc:
             print(f'[Camera] auto connect failed: {exc}')
 
-    print(f'[Web] open: http://{args.host}:{args.port}')
-    web.run_app(server.make_app(), host=args.host, port=args.port)
+    print(f'[Web] open: http://{HOST}:{WEB_PORT}')
+    web.run_app(server.make_app(), host=HOST, port=WEB_PORT)
 
 
 if __name__ == '__main__':

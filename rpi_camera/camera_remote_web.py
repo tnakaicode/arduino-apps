@@ -1,6 +1,7 @@
 import asyncio
 import contextlib
 import os
+import subprocess
 import threading
 import time
 from datetime import datetime
@@ -81,10 +82,25 @@ HTML_PAGE = """<!doctype html>
       object-fit: contain;
     }
     .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .row2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
-      margin-top: 12px;
+    }
+    .row3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 900px) {
+      .row3 {
+        grid-template-columns: 1fr;
+      }
     }
     .wide {
       grid-column: 1 / -1;
@@ -151,14 +167,20 @@ HTML_PAGE = """<!doctype html>
         </div>
         <div class=\"controls\">
           <input id=\"device\" class=\"wide\" readonly />
-          <button id=\"connect\" class=\"ok\">接続</button>
-          <button id=\"disconnect\" class=\"danger\">切断</button>
+          <div class=\"row2\">
+            <button id=\"connect\" class=\"ok\">接続</button>
+            <button id=\"disconnect\" class=\"danger\">切断</button>
+          </div>
           <input id=\"overlay\" class=\"wide\" placeholder=\"オーバーレイ文字列（日本語可）\" />
-          <button id=\"save\">画像保存</button>
-          <button id=\"recordStart\" class=\"ok\">録画開始</button>
-          <button id=\"recordStop\" class=\"danger\">録画停止</button>
-          <button id=\"tlStart\" class=\"ok\">TL開始</button>
-          <button id=\"tlStop\" class=\"danger\">TL停止</button>
+          <div class=\"row3\">
+            <button id=\"save\">画像保存</button>
+            <button id=\"recordStart\" class=\"ok\">録画開始</button>
+            <button id=\"recordStop\" class=\"danger\">録画停止</button>
+          </div>
+          <div class=\"row2\">
+            <button id=\"tlStart\" class=\"ok\">TL開始</button>
+            <button id=\"tlStop\" class=\"danger\">TL停止</button>
+          </div>
         </div>
         <div id=\"savedir\" class=\"muted\">保存先: -</div>
         <div class=\"muted\">同じネットワーク内の別PCから http://RaspberryPiのIP:5000 でアクセスできます。</div>
@@ -266,10 +288,12 @@ class CameraRemoteServer:
 
         self.recording = False
         self.video_writer = None
+        self.writer_lock = threading.Lock()
 
         self.timelapse_active = False
         self.timelapse_last_capture_ts = 0.0
         self.timelapse_frames = []
+        self.timelapse_lock = threading.Lock()
 
         self.target_fps = TARGET_FPS
         self._fps = 0.0
@@ -286,7 +310,25 @@ class CameraRemoteServer:
         if ImageFont is None:
             return None
 
+        # Try system font discovery first for better portability.
+        try:
+            out = subprocess.check_output(
+                ['fc-list', ':lang=ja', 'file'],
+                text=True,
+                stderr=subprocess.DEVNULL,
+            )
+            for line in out.splitlines():
+                path = line.strip().split(':')[0]
+                if path and os.path.exists(path):
+                    try:
+                        return ImageFont.truetype(path, 28)
+                    except Exception:
+                        continue
+        except Exception:
+            pass
+
         font_candidates = [
+            '/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf',
             '/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc',
             '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
             '/usr/share/fonts/truetype/fonts-japanese-gothic.ttf',
@@ -299,6 +341,13 @@ class CameraRemoteServer:
                 except Exception:
                     continue
         return None
+
+    def _has_non_ascii(self, text):
+        try:
+            text.encode('ascii')
+            return False
+        except UnicodeEncodeError:
+            return True
 
     def _list_devices(self):
         return [{'index': 0, 'label': self.camera_port}]
@@ -328,7 +377,9 @@ class CameraRemoteServer:
         return datetime.now().strftime('%Y%m%d_%H%M%S')
 
     def _draw_text(self, frame, text, x, y, color=(0, 255, 255)):
-        if self._pil_font is None or Image is None or ImageDraw is None:
+        # ASCII text is more reliable with cv2 on embedded environments.
+        use_pillow = self._has_non_ascii(text)
+        if (not use_pillow) or self._pil_font is None or Image is None or ImageDraw is None:
             cv2.putText(
                 frame,
                 text,
@@ -344,9 +395,22 @@ class CameraRemoteServer:
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         pil_img = Image.fromarray(rgb)
         draw = ImageDraw.Draw(pil_img)
-        draw.text((x, y - 24), text, font=self._pil_font, fill=(color[2], color[1], color[0]))
-        out = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
-        return out
+        try:
+            draw.text((x, y - 24), text, font=self._pil_font, fill=(color[2], color[1], color[0]))
+            out = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+            return out
+        except Exception:
+            cv2.putText(
+                frame,
+                text,
+                (x, y),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.8,
+                color,
+                2,
+                cv2.LINE_AA,
+            )
+            return frame
 
     def _overlay(self, frame):
         out = frame.copy()
@@ -391,12 +455,17 @@ class CameraRemoteServer:
             with self.frame_lock:
                 self.latest_frame = draw
 
-            if self.recording and self.video_writer is not None:
-                self.video_writer.write(draw)
+            writer = None
+            with self.writer_lock:
+                if self.recording and self.video_writer is not None:
+                    writer = self.video_writer
+            if writer is not None:
+                writer.write(draw)
 
             if self.timelapse_active:
                 if now - self.timelapse_last_capture_ts >= TIMELAPSE_INTERVAL_SEC:
-                    self.timelapse_frames.append(draw.copy())
+                    with self.timelapse_lock:
+                        self.timelapse_frames.append(draw.copy())
                     self.timelapse_last_capture_ts = now
 
             elapsed = time.perf_counter() - loop_start
@@ -431,45 +500,54 @@ class CameraRemoteServer:
         if not writer.isOpened():
             raise RuntimeError('failed to start recorder')
 
-        self.video_writer = writer
-        self.recording = True
+        with self.writer_lock:
+          self.video_writer = writer
+          self.recording = True
         return path
 
     def stop_recording(self):
-        if self.video_writer is not None:
-            self.video_writer.release()
+        writer = None
+        with self.writer_lock:
+            writer = self.video_writer
             self.video_writer = None
-        self.recording = False
+            self.recording = False
+        if writer is not None:
+            writer.release()
 
     def start_timelapse(self):
         if self.timelapse_active:
             return None
-        self.timelapse_frames = []
+        with self.timelapse_lock:
+            self.timelapse_frames = []
         self.timelapse_last_capture_ts = 0.0
         self.timelapse_active = True
         return {'ok': True}
 
     def stop_timelapse(self, save=True):
-        if not self.timelapse_active and not self.timelapse_frames:
+        with self.timelapse_lock:
+            has_frames = bool(self.timelapse_frames)
+        if not self.timelapse_active and not has_frames:
             return None
 
         self.timelapse_active = False
 
-        if not save or not self.timelapse_frames:
+        with self.timelapse_lock:
+            frames = list(self.timelapse_frames)
             self.timelapse_frames = []
+
+        if not save or not frames:
             return None
 
-        h, w = self.timelapse_frames[0].shape[:2]
+        h, w = frames[0].shape[:2]
         path = os.path.join(self.out_dir, f'timelapse_{self._now_stamp()}.mp4')
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         writer = cv2.VideoWriter(path, fourcc, TIMELAPSE_VIDEO_FPS, (w, h))
         if not writer.isOpened():
             raise RuntimeError('failed to start timelapse writer')
 
-        for frame in self.timelapse_frames:
+        for frame in frames:
             writer.write(frame)
         writer.release()
-        self.timelapse_frames = []
         return path
 
     def status(self):

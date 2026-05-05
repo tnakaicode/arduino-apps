@@ -209,3 +209,4 @@ void loop()
 // コンパイル例: arduino-cli compile --fqbn arduino:avr:uno .
 // 書き込み例:   arduino-cli upload -p COM4 --fqbn arduino:avr:uno .
 // シリアル監視: arduino-cli monitor -p COM4 --config baudrate=115200
+// arduino-cli monitor -p /dev/ttyACM0 --config baudrate=115200

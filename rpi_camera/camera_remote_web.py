@@ -1,13 +1,15 @@
 import asyncio
 import contextlib
-import glob
 import os
 import threading
 import time
 from datetime import datetime
 
 import cv2
+import numpy as np
 from aiohttp import web
+
+from PIL import Image, ImageDraw, ImageFont
 
 
 HOST = '0.0.0.0'
@@ -15,13 +17,17 @@ WEB_PORT = 5000
 CAMERA_PORT = '/dev/video0'
 AUTO_CONNECT = True
 
+TARGET_FPS = 30.0
+TIMELAPSE_INTERVAL_SEC = 2.0
+TIMELAPSE_VIDEO_FPS = 30.0
+
 
 HTML_PAGE = """<!doctype html>
 <html lang=\"ja\">
 <head>
   <meta charset=\"utf-8\" />
   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />
-  <title>Camera Remote</title>
+  <title>カメラ遠隔モニター</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -41,7 +47,7 @@ HTML_PAGE = """<!doctype html>
       min-height: 100vh;
     }
     .wrap {
-      max-width: 1200px;
+      max-width: 1280px;
       margin: 0 auto;
       padding: 20px;
     }
@@ -83,7 +89,7 @@ HTML_PAGE = """<!doctype html>
     .wide {
       grid-column: 1 / -1;
     }
-    button, select, input {
+    button, input {
       width: 100%;
       border: 1px solid #475569;
       background: #0b1220;
@@ -100,18 +106,8 @@ HTML_PAGE = """<!doctype html>
       transform: translateY(-1px);
       border-color: var(--accent);
     }
-    .ok {
-      border-color: var(--accent2);
-    }
-    .danger {
-      border-color: var(--danger);
-    }
-    .muted {
-      color: var(--muted);
-      font-size: 0.88rem;
-      margin-top: 10px;
-      line-height: 1.5;
-    }
+    .ok { border-color: var(--accent2); }
+    .danger { border-color: var(--danger); }
     .status {
       display: grid;
       gap: 8px;
@@ -120,39 +116,51 @@ HTML_PAGE = """<!doctype html>
     .status div {
       display: flex;
       justify-content: space-between;
-      font-size: 0.95rem;
       border-bottom: 1px dashed #334155;
       padding-bottom: 4px;
+      font-size: 0.95rem;
     }
     .tag {
       color: var(--accent);
       font-weight: 700;
     }
+    .muted {
+      color: var(--muted);
+      font-size: 0.86rem;
+      margin-top: 10px;
+      line-height: 1.5;
+      word-break: break-all;
+    }
   </style>
 </head>
 <body>
   <div class=\"wrap\">
-    <h1>Camera Remote (Browser View)</h1>
+    <h1>カメラ遠隔モニター（ブラウザ）</h1>
     <div class=\"grid\">
       <div class=\"card\">
         <img id=\"stream\" src=\"/stream.mjpg\" alt=\"camera stream\" />
       </div>
       <div class=\"card\">
         <div class=\"status\">
-          <div><span>Camera</span><span id=\"cam\" class=\"tag\">-</span></div>
-          <div><span>Recording</span><span id=\"rec\" class=\"tag\">-</span></div>
+          <div><span>カメラ</span><span id=\"cam\" class=\"tag\">-</span></div>
+          <div><span>ポート</span><span id=\"camport\" class=\"tag\">-</span></div>
+          <div><span>録画</span><span id=\"rec\" class=\"tag\">-</span></div>
+          <div><span>タイムラプス</span><span id=\"tl\" class=\"tag\">-</span></div>
           <div><span>FPS</span><span id=\"fps\" class=\"tag\">-</span></div>
-          <div><span>Resolution</span><span id=\"res\" class=\"tag\">-</span></div>
+          <div><span>解像度</span><span id=\"res\" class=\"tag\">-</span></div>
         </div>
         <div class=\"controls\">
-          <select id=\"device\" class=\"wide\"></select>
-          <button id=\"connect\" class=\"ok\">Connect</button>
-          <button id=\"disconnect\" class=\"danger\">Disconnect</button>
-          <input id=\"overlay\" class=\"wide\" placeholder=\"オーバーレイ文字列\" />
-          <button id=\"save\">Save Image</button>
-          <button id=\"recordStart\" class=\"ok\">Start Rec</button>
-          <button id=\"recordStop\" class=\"danger\">Stop Rec</button>
+          <input id=\"device\" class=\"wide\" readonly />
+          <button id=\"connect\" class=\"ok\">接続</button>
+          <button id=\"disconnect\" class=\"danger\">切断</button>
+          <input id=\"overlay\" class=\"wide\" placeholder=\"オーバーレイ文字列（日本語可）\" />
+          <button id=\"save\">画像保存</button>
+          <button id=\"recordStart\" class=\"ok\">録画開始</button>
+          <button id=\"recordStop\" class=\"danger\">録画停止</button>
+          <button id=\"tlStart\" class=\"ok\">TL開始</button>
+          <button id=\"tlStop\" class=\"danger\">TL停止</button>
         </div>
+        <div id=\"savedir\" class=\"muted\">保存先: -</div>
         <div class=\"muted\">同じネットワーク内の別PCから http://RaspberryPiのIP:5000 でアクセスできます。</div>
       </div>
     </div>
@@ -168,70 +176,63 @@ HTML_PAGE = """<!doctype html>
       return r.json();
     }
 
-    async function refreshDevices() {
-      const data = await j('/api/devices');
-      const sel = document.getElementById('device');
-      sel.innerHTML = '';
-      for (const d of data.devices) {
-        const o = document.createElement('option');
-        o.value = d.index;
-        o.textContent = d.label;
-        sel.appendChild(o);
-      }
-      if (typeof data.current_index === 'number') {
-        sel.value = String(data.current_index);
-      }
-    }
-
     async function refreshStatus() {
       try {
         const s = await j('/api/status');
-        document.getElementById('cam').textContent = s.connected ? 'connected' : 'disconnected';
-        document.getElementById('rec').textContent = s.recording ? 'on' : 'off';
+        document.getElementById('cam').textContent = s.connected ? '接続中' : '未接続';
+        document.getElementById('camport').textContent = s.camera_port || '-';
+        document.getElementById('device').value = s.camera_port || '-';
+        document.getElementById('rec').textContent = s.recording ? 'ON' : 'OFF';
+        document.getElementById('tl').textContent = s.timelapse_active ? 'ON' : 'OFF';
         document.getElementById('fps').textContent = s.fps.toFixed(1);
         document.getElementById('res').textContent = s.resolution || '-';
+        document.getElementById('savedir').textContent = '保存先: ' + (s.output_dir || '-');
       } catch (_) {}
     }
 
     document.getElementById('connect').onclick = async () => {
-      const idx = Number(document.getElementById('device').value || 0);
-      await j('/api/connect', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({index: idx})
-      });
+      await j('/api/connect', { method: 'POST' });
       await refreshStatus();
     };
 
     document.getElementById('disconnect').onclick = async () => {
-      await j('/api/disconnect', {method: 'POST'});
+      await j('/api/disconnect', { method: 'POST' });
       await refreshStatus();
     };
 
     document.getElementById('save').onclick = async () => {
-      await j('/api/save-image', {method: 'POST'});
+      await j('/api/save-image', { method: 'POST' });
       await refreshStatus();
     };
 
     document.getElementById('recordStart').onclick = async () => {
-      await j('/api/start-recording', {method: 'POST'});
+      await j('/api/start-recording', { method: 'POST' });
       await refreshStatus();
     };
 
     document.getElementById('recordStop').onclick = async () => {
-      await j('/api/stop-recording', {method: 'POST'});
+      await j('/api/stop-recording', { method: 'POST' });
+      await refreshStatus();
+    };
+
+    document.getElementById('tlStart').onclick = async () => {
+      await j('/api/timelapse/start', { method: 'POST' });
+      await refreshStatus();
+    };
+
+    document.getElementById('tlStop').onclick = async () => {
+      await j('/api/timelapse/stop', { method: 'POST' });
       await refreshStatus();
     };
 
     document.getElementById('overlay').onchange = async (e) => {
       await j('/api/overlay-text', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({text: e.target.value || ''})
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: e.target.value || '' })
       });
     };
 
-    refreshDevices().catch(console.error);
     refreshStatus();
     setInterval(refreshStatus, 1000);
   </script>
@@ -240,49 +241,82 @@ HTML_PAGE = """<!doctype html>
 """
 
 
+def create_temp_output_dir(base_dir):
+    stamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    out_dir = os.path.join(base_dir, f'temp_{stamp}')
+    os.makedirs(out_dir, exist_ok=True)
+    return out_dir
+
+
 class CameraRemoteServer:
-  def __init__(self, host="0.0.0.0", port=5000, camera_port='/dev/video0', out_dir=None):
-    self.host = host
-    self.port = port
-    self.camera_port = camera_port
-    self.out_dir = out_dir or os.path.join(os.path.dirname(__file__), "output")
-    os.makedirs(self.out_dir, exist_ok=True)
+    def __init__(self, host, port, camera_port, out_dir=None):
+        self.host = host
+        self.port = port
+        self.camera_port = camera_port
+        base_dir = os.path.dirname(__file__)
+        self.out_dir = out_dir or create_temp_output_dir(base_dir)
+        os.makedirs(self.out_dir, exist_ok=True)
 
-    self.cap = None
-    self.device_index = 0
-    self.overlay_text = ""
+        self.cap = None
+        self.overlay_text = ''
+        self.connected = False
 
-    self.frame_lock = threading.Lock()
-    self.latest_frame = None
+        self.frame_lock = threading.Lock()
+        self.latest_frame = None
 
-    self.connected = False
-    self.recording = False
-    self.video_writer = None
+        self.recording = False
+        self.video_writer = None
 
-    self._frame_counter = 0
-    self._fps = 0.0
-    self._fps_last_tick = time.time()
+        self.timelapse_active = False
+        self.timelapse_last_capture_ts = 0.0
+        self.timelapse_frames = []
 
-    self.stop_event = threading.Event()
-    self.capture_thread = threading.Thread(target=self._capture_loop, daemon=True)
-    self.capture_thread.start()
+        self.target_fps = TARGET_FPS
+        self._fps = 0.0
+        self._fps_ema = TARGET_FPS
+        self._prev_frame_ts = None
 
-  def _list_devices(self):
+        self._pil_font = self._load_japanese_font()
+
+        self.stop_event = threading.Event()
+        self.capture_thread = threading.Thread(target=self._capture_loop, daemon=True)
+        self.capture_thread.start()
+
+    def _load_japanese_font(self):
+        if ImageFont is None:
+            return None
+
+        font_candidates = [
+            '/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc',
+            '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
+            '/usr/share/fonts/truetype/fonts-japanese-gothic.ttf',
+            '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+        ]
+        for path in font_candidates:
+            if os.path.exists(path):
+                try:
+                    return ImageFont.truetype(path, 28)
+                except Exception:
+                    continue
+        return None
+
+    def _list_devices(self):
         return [{'index': 0, 'label': self.camera_port}]
 
-  def connect_camera(self, index=0):
+    def connect_camera(self):
         self.disconnect_camera()
         cap = cv2.VideoCapture(self.camera_port, cv2.CAP_V4L2)
         if not cap.isOpened():
             cap.release()
             raise RuntimeError(f'failed to open camera port={self.camera_port}')
 
+        cap.set(cv2.CAP_PROP_FPS, self.target_fps)
         self.cap = cap
-        self.device_index = 0
         self.connected = True
 
-  def disconnect_camera(self):
+    def disconnect_camera(self):
         self.stop_recording()
+        self.stop_timelapse(save=False)
         if self.cap is not None:
             self.cap.release()
             self.cap = None
@@ -290,35 +324,52 @@ class CameraRemoteServer:
         with self.frame_lock:
             self.latest_frame = None
 
-  def _now_stamp(self):
+    def _now_stamp(self):
         return datetime.now().strftime('%Y%m%d_%H%M%S')
 
-  def _overlay(self, frame):
-        out = frame.copy()
-        stamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        lines = [stamp, f'FPS: {self._fps:.1f}']
-        if self.recording:
-            lines.append('REC')
-        if self.overlay_text:
-            lines.append(self.overlay_text)
-
-        y = 28
-        for text in lines:
+    def _draw_text(self, frame, text, x, y, color=(0, 255, 255)):
+        if self._pil_font is None or Image is None or ImageDraw is None:
             cv2.putText(
-                out,
+                frame,
                 text,
-                (12, y),
+                (x, y),
                 cv2.FONT_HERSHEY_SIMPLEX,
-                0.7,
-                (0, 255, 255),
+                0.8,
+                color,
                 2,
                 cv2.LINE_AA,
             )
-            y += 28
+            return frame
+
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        pil_img = Image.fromarray(rgb)
+        draw = ImageDraw.Draw(pil_img)
+        draw.text((x, y - 24), text, font=self._pil_font, fill=(color[2], color[1], color[0]))
+        out = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
         return out
 
-  def _capture_loop(self):
+    def _overlay(self, frame):
+        out = frame.copy()
+        stamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        # RECを一番下にするため、通常情報を先に並べる
+        lines = [stamp, f'FPS: {self._fps:.1f}']
+        if self.overlay_text:
+            lines.append(self.overlay_text)
+        if self.recording:
+            lines.append('REC')
+
+        y = 36
+        for text in lines:
+            out = self._draw_text(out, text, 12, y)
+            y += 34
+        return out
+
+    def _capture_loop(self):
+        interval = 1.0 / max(self.target_fps, 1.0)
         while not self.stop_event.is_set():
+            loop_start = time.perf_counter()
+
             if self.cap is None:
                 time.sleep(0.05)
                 continue
@@ -328,6 +379,14 @@ class CameraRemoteServer:
                 time.sleep(0.02)
                 continue
 
+            now = time.perf_counter()
+            if self._prev_frame_ts is not None:
+                dt = max(now - self._prev_frame_ts, 1e-6)
+                inst_fps = min(120.0, 1.0 / dt)
+                self._fps_ema = (self._fps_ema * 0.85) + (inst_fps * 0.15)
+                self._fps = min(self._fps_ema, self.target_fps * 1.2)
+            self._prev_frame_ts = now
+
             draw = self._overlay(frame)
             with self.frame_lock:
                 self.latest_frame = draw
@@ -335,15 +394,17 @@ class CameraRemoteServer:
             if self.recording and self.video_writer is not None:
                 self.video_writer.write(draw)
 
-            self._frame_counter += 1
-            now = time.time()
-            elapsed = now - self._fps_last_tick
-            if elapsed >= 1.0:
-                self._fps = self._frame_counter / max(elapsed, 1e-6)
-                self._frame_counter = 0
-                self._fps_last_tick = now
+            if self.timelapse_active:
+                if now - self.timelapse_last_capture_ts >= TIMELAPSE_INTERVAL_SEC:
+                    self.timelapse_frames.append(draw.copy())
+                    self.timelapse_last_capture_ts = now
 
-  def save_image(self):
+            elapsed = time.perf_counter() - loop_start
+            sleep_s = interval - elapsed
+            if sleep_s > 0:
+                time.sleep(sleep_s)
+
+    def save_image(self):
         with self.frame_lock:
             frame = None if self.latest_frame is None else self.latest_frame.copy()
         if frame is None:
@@ -354,7 +415,7 @@ class CameraRemoteServer:
             raise RuntimeError('failed to save image')
         return path
 
-  def start_recording(self):
+    def start_recording(self):
         if self.recording:
             return None
 
@@ -366,7 +427,7 @@ class CameraRemoteServer:
         h, w = frame.shape[:2]
         path = os.path.join(self.out_dir, f'camera_{self._now_stamp()}.mp4')
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        writer = cv2.VideoWriter(path, fourcc, max(10.0, self._fps or 30.0), (w, h))
+        writer = cv2.VideoWriter(path, fourcc, max(10.0, self.target_fps), (w, h))
         if not writer.isOpened():
             raise RuntimeError('failed to start recorder')
 
@@ -374,13 +435,44 @@ class CameraRemoteServer:
         self.recording = True
         return path
 
-  def stop_recording(self):
+    def stop_recording(self):
         if self.video_writer is not None:
             self.video_writer.release()
             self.video_writer = None
         self.recording = False
 
-  def status(self):
+    def start_timelapse(self):
+        if self.timelapse_active:
+            return None
+        self.timelapse_frames = []
+        self.timelapse_last_capture_ts = 0.0
+        self.timelapse_active = True
+        return {'ok': True}
+
+    def stop_timelapse(self, save=True):
+        if not self.timelapse_active and not self.timelapse_frames:
+            return None
+
+        self.timelapse_active = False
+
+        if not save or not self.timelapse_frames:
+            self.timelapse_frames = []
+            return None
+
+        h, w = self.timelapse_frames[0].shape[:2]
+        path = os.path.join(self.out_dir, f'timelapse_{self._now_stamp()}.mp4')
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        writer = cv2.VideoWriter(path, fourcc, TIMELAPSE_VIDEO_FPS, (w, h))
+        if not writer.isOpened():
+            raise RuntimeError('failed to start timelapse writer')
+
+        for frame in self.timelapse_frames:
+            writer.write(frame)
+        writer.release()
+        self.timelapse_frames = []
+        return path
+
+    def status(self):
         resolution = None
         with self.frame_lock:
             if self.latest_frame is not None:
@@ -390,50 +482,57 @@ class CameraRemoteServer:
         return {
             'connected': self.connected,
             'recording': self.recording,
+            'timelapse_active': self.timelapse_active,
             'fps': float(self._fps),
             'resolution': resolution,
-            'current_index': self.device_index,
-          'camera_port': self.camera_port,
+            'camera_port': self.camera_port,
             'output_dir': self.out_dir,
+            'timelapse_interval_sec': TIMELAPSE_INTERVAL_SEC,
         }
 
-  async def index(self, request):
+    async def index(self, request):
         return web.Response(text=HTML_PAGE, content_type='text/html')
 
-  async def api_status(self, request):
+    async def api_status(self, request):
         return web.json_response(self.status())
 
-  async def api_devices(self, request):
-        return web.json_response({'devices': self._list_devices(), 'current_index': self.device_index})
+    async def api_devices(self, request):
+        return web.json_response({'devices': self._list_devices(), 'camera_port': self.camera_port})
 
-  async def api_connect(self, request):
-        data = await request.json()
-        index = int(data.get('index', 0))
-        self.connect_camera(index)
-        return web.json_response({'ok': True, 'index': index})
+    async def api_connect(self, request):
+        self.connect_camera()
+        return web.json_response({'ok': True, 'camera_port': self.camera_port})
 
-  async def api_disconnect(self, request):
+    async def api_disconnect(self, request):
         self.disconnect_camera()
         return web.json_response({'ok': True})
 
-  async def api_save_image(self, request):
+    async def api_save_image(self, request):
         path = self.save_image()
         return web.json_response({'ok': True, 'path': path})
 
-  async def api_start_recording(self, request):
+    async def api_start_recording(self, request):
         path = self.start_recording()
         return web.json_response({'ok': True, 'path': path})
 
-  async def api_stop_recording(self, request):
+    async def api_stop_recording(self, request):
         self.stop_recording()
         return web.json_response({'ok': True})
 
-  async def api_overlay_text(self, request):
+    async def api_overlay_text(self, request):
         data = await request.json()
         self.overlay_text = str(data.get('text', '')).strip()
         return web.json_response({'ok': True, 'text': self.overlay_text})
 
-  async def stream(self, request):
+    async def api_timelapse_start(self, request):
+        self.start_timelapse()
+        return web.json_response({'ok': True, 'interval_sec': TIMELAPSE_INTERVAL_SEC})
+
+    async def api_timelapse_stop(self, request):
+        path = self.stop_timelapse(save=True)
+        return web.json_response({'ok': True, 'path': path})
+
+    async def stream(self, request):
         response = web.StreamResponse(
             status=200,
             headers={
@@ -457,10 +556,10 @@ class CameraRemoteServer:
                     await asyncio.sleep(0.05)
                     continue
 
-                await response.write(b'--frame\r\n')
-                await response.write(b'Content-Type: image/jpeg\r\n\r\n')
+                await response.write(b'--frame\\r\\n')
+                await response.write(b'Content-Type: image/jpeg\\r\\n\\r\\n')
                 await response.write(encoded.tobytes())
-                await response.write(b'\r\n')
+                await response.write(b'\\r\\n')
                 await asyncio.sleep(0.03)
         except (asyncio.CancelledError, ConnectionResetError, RuntimeError):
             pass
@@ -470,21 +569,12 @@ class CameraRemoteServer:
 
         return response
 
-  def _blank_frame(self):
-        img = cv2.UMat(480, 640, cv2.CV_8UC3).get()
-        cv2.putText(
-            img,
-            'Camera not connected',
-            (120, 240),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            1.0,
-            (0, 0, 255),
-            2,
-            cv2.LINE_AA,
-        )
+    def _blank_frame(self):
+        img = np.zeros((480, 640, 3), dtype=np.uint8)
+        img = self._draw_text(img, 'カメラ未接続', 140, 240, color=(0, 0, 255))
         return img
 
-  def make_app(self):
+    def make_app(self):
         app = web.Application()
         app.router.add_get('/', self.index)
         app.router.add_get('/stream.mjpg', self.stream)
@@ -497,10 +587,13 @@ class CameraRemoteServer:
         app.router.add_post('/api/start-recording', self.api_start_recording)
         app.router.add_post('/api/stop-recording', self.api_stop_recording)
         app.router.add_post('/api/overlay-text', self.api_overlay_text)
+        app.router.add_post('/api/timelapse/start', self.api_timelapse_start)
+        app.router.add_post('/api/timelapse/stop', self.api_timelapse_stop)
 
         async def on_shutdown(_app):
             self.stop_event.set()
             self.stop_recording()
+            self.stop_timelapse(save=False)
             self.disconnect_camera()
 
         app.on_shutdown.append(on_shutdown)

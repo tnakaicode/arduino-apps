@@ -5,6 +5,7 @@ import subprocess
 import threading
 import time
 from datetime import datetime
+from pathlib import Path
 
 import cv2
 import numpy as np
@@ -12,6 +13,8 @@ from aiohttp import web
 
 from PIL import Image, ImageDraw, ImageFont
 
+# pkill -f rpi_camera/camera_remote_web.py || true
+# ss -lntp | grep ':5000' || true
 
 HOST = '0.0.0.0'
 WEB_PORT = 5000
@@ -81,6 +84,22 @@ HTML_PAGE = """<!doctype html>
       aspect-ratio: 16/9;
       object-fit: contain;
     }
+    .status {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .status div {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px dashed #334155;
+      padding-bottom: 4px;
+      font-size: 0.95rem;
+    }
+    .tag {
+      color: var(--accent);
+      font-weight: 700;
+    }
     .controls {
       display: flex;
       flex-direction: column;
@@ -98,14 +117,11 @@ HTML_PAGE = """<!doctype html>
       gap: 10px;
     }
     @media (max-width: 900px) {
-      .row3 {
+      .row2, .row3 {
         grid-template-columns: 1fr;
       }
     }
-    .wide {
-      grid-column: 1 / -1;
-    }
-    button, input {
+    button, input, select {
       width: 100%;
       border: 1px solid #475569;
       background: #0b1220;
@@ -113,6 +129,7 @@ HTML_PAGE = """<!doctype html>
       padding: 10px;
       border-radius: 10px;
       font-size: 0.95rem;
+      box-sizing: border-box;
     }
     button {
       cursor: pointer;
@@ -124,22 +141,6 @@ HTML_PAGE = """<!doctype html>
     }
     .ok { border-color: var(--accent2); }
     .danger { border-color: var(--danger); }
-    .status {
-      display: grid;
-      gap: 8px;
-      margin-bottom: 10px;
-    }
-    .status div {
-      display: flex;
-      justify-content: space-between;
-      border-bottom: 1px dashed #334155;
-      padding-bottom: 4px;
-      font-size: 0.95rem;
-    }
-    .tag {
-      color: var(--accent);
-      font-weight: 700;
-    }
     .muted {
       color: var(--muted);
       font-size: 0.86rem;
@@ -165,24 +166,40 @@ HTML_PAGE = """<!doctype html>
           <div><span>FPS</span><span id=\"fps\" class=\"tag\">-</span></div>
           <div><span>解像度</span><span id=\"res\" class=\"tag\">-</span></div>
         </div>
+
         <div class=\"controls\">
-          <input id=\"device\" class=\"wide\" readonly />
+          <input id=\"device\" readonly />
           <div class=\"row2\">
             <button id=\"connect\" class=\"ok\">接続</button>
             <button id=\"disconnect\" class=\"danger\">切断</button>
           </div>
-          <input id=\"overlay\" class=\"wide\" placeholder=\"オーバーレイ文字列（日本語可）\" />
-          <div class=\"row3\">
-            <button id=\"save\">画像保存</button>
+
+          <input id=\"overlay\" placeholder=\"オーバーレイ文字列（日本語可）\" />
+
+          <div class=\"row2\">
             <button id=\"recordStart\" class=\"ok\">録画開始</button>
             <button id=\"recordStop\" class=\"danger\">録画停止</button>
           </div>
+
           <div class=\"row2\">
             <button id=\"tlStart\" class=\"ok\">TL開始</button>
             <button id=\"tlStop\" class=\"danger\">TL停止</button>
           </div>
+
+          <div class=\"row2\">
+            <button id=\"save\">画像保存</button>
+            <button id=\"downloadLatest\" class=\"ok\">最新録画DL</button>
+          </div>
+
+          <select id=\"fileSelect\"></select>
+          <div class=\"row2\">
+            <button id=\"refreshFiles\">一覧更新</button>
+            <button id=\"downloadSelected\" class=\"ok\">選択DL</button>
+          </div>
         </div>
+
         <div id=\"savedir\" class=\"muted\">保存先: -</div>
+        <div id=\"downloadInfo\" class=\"muted\">ダウンロード対象: -</div>
         <div class=\"muted\">同じネットワーク内の別PCから http://RaspberryPiのIP:5000 でアクセスできます。</div>
       </div>
     </div>
@@ -212,6 +229,32 @@ HTML_PAGE = """<!doctype html>
       } catch (_) {}
     }
 
+    async function refreshFiles() {
+      try {
+        const data = await j('/api/files');
+        const sel = document.getElementById('fileSelect');
+        sel.innerHTML = '';
+        const files = data.files || [];
+        if (files.length === 0) {
+          const o = document.createElement('option');
+          o.value = '';
+          o.textContent = 'ダウンロード可能な録画ファイルなし';
+          sel.appendChild(o);
+          document.getElementById('downloadInfo').textContent = 'ダウンロード対象: -';
+          return;
+        }
+        for (const f of files) {
+          const o = document.createElement('option');
+          o.value = f.name;
+          o.textContent = `${f.name} (${Math.round(f.size / 1024)} KB)`;
+          sel.appendChild(o);
+        }
+        document.getElementById('downloadInfo').textContent = 'ダウンロード対象: ' + files[0].name;
+      } catch (e) {
+        document.getElementById('downloadInfo').textContent = 'ダウンロード対象: 取得失敗';
+      }
+    }
+
     document.getElementById('connect').onclick = async () => {
       await j('/api/connect', { method: 'POST' });
       await refreshStatus();
@@ -225,6 +268,7 @@ HTML_PAGE = """<!doctype html>
     document.getElementById('save').onclick = async () => {
       await j('/api/save-image', { method: 'POST' });
       await refreshStatus();
+      await refreshFiles();
     };
 
     document.getElementById('recordStart').onclick = async () => {
@@ -235,6 +279,7 @@ HTML_PAGE = """<!doctype html>
     document.getElementById('recordStop').onclick = async () => {
       await j('/api/stop-recording', { method: 'POST' });
       await refreshStatus();
+      await refreshFiles();
     };
 
     document.getElementById('tlStart').onclick = async () => {
@@ -245,6 +290,33 @@ HTML_PAGE = """<!doctype html>
     document.getElementById('tlStop').onclick = async () => {
       await j('/api/timelapse/stop', { method: 'POST' });
       await refreshStatus();
+      await refreshFiles();
+    };
+
+    document.getElementById('refreshFiles').onclick = async () => {
+      await refreshFiles();
+    };
+
+    document.getElementById('downloadLatest').onclick = async () => {
+      const data = await j('/api/files');
+      const files = data.files || [];
+      if (files.length === 0) {
+        return;
+      }
+      window.location.href = `/download/${encodeURIComponent(files[0].name)}`;
+    };
+
+    document.getElementById('downloadSelected').onclick = async () => {
+      const name = document.getElementById('fileSelect').value;
+      if (!name) {
+        return;
+      }
+      window.location.href = `/download/${encodeURIComponent(name)}`;
+    };
+
+    document.getElementById('fileSelect').onchange = (e) => {
+      const v = e.target.value || '-';
+      document.getElementById('downloadInfo').textContent = 'ダウンロード対象: ' + v;
     };
 
     document.getElementById('overlay').onchange = async (e) => {
@@ -256,6 +328,7 @@ HTML_PAGE = """<!doctype html>
     };
 
     refreshStatus();
+    refreshFiles();
     setInterval(refreshStatus, 1000);
   </script>
 </body>
@@ -422,6 +495,10 @@ class CameraRemoteServer:
             lines.append(self.overlay_text)
         if self.recording:
             lines.append('REC')
+        if self.timelapse_active:
+          with self.timelapse_lock:
+            tl_count = len(self.timelapse_frames)
+          lines.append(f'TL ON ({tl_count})')
 
         y = 36
         for text in lines:
@@ -455,12 +532,9 @@ class CameraRemoteServer:
             with self.frame_lock:
                 self.latest_frame = draw
 
-            writer = None
             with self.writer_lock:
-                if self.recording and self.video_writer is not None:
-                    writer = self.video_writer
-            if writer is not None:
-                writer.write(draw)
+              if self.recording and self.video_writer is not None:
+                self.video_writer.write(draw)
 
             if self.timelapse_active:
                 if now - self.timelapse_last_capture_ts >= TIMELAPSE_INTERVAL_SEC:
@@ -501,8 +575,8 @@ class CameraRemoteServer:
             raise RuntimeError('failed to start recorder')
 
         with self.writer_lock:
-          self.video_writer = writer
-          self.recording = True
+            self.video_writer = writer
+            self.recording = True
         return path
 
     def stop_recording(self):
@@ -568,6 +642,28 @@ class CameraRemoteServer:
             'timelapse_interval_sec': TIMELAPSE_INTERVAL_SEC,
         }
 
+    def list_downloadable_files(self):
+        p = Path(self.out_dir)
+        if not p.exists():
+            return []
+
+        files = []
+        for item in p.iterdir():
+            if not item.is_file():
+                continue
+            if item.suffix.lower() not in {'.mp4', '.png'}:
+                continue
+            stat = item.stat()
+            files.append(
+                {
+                    'name': item.name,
+                    'size': stat.st_size,
+                    'mtime': stat.st_mtime,
+                }
+            )
+        files.sort(key=lambda x: x['mtime'], reverse=True)
+        return files
+
     async def index(self, request):
         return web.Response(text=HTML_PAGE, content_type='text/html')
 
@@ -609,6 +705,27 @@ class CameraRemoteServer:
     async def api_timelapse_stop(self, request):
         path = self.stop_timelapse(save=True)
         return web.json_response({'ok': True, 'path': path})
+
+    async def api_files(self, request):
+        return web.json_response({'files': self.list_downloadable_files()})
+
+    async def download_file(self, request):
+        name = request.match_info.get('name', '')
+        safe_name = os.path.basename(name)
+        if not safe_name:
+            raise web.HTTPBadRequest(text='invalid file name')
+
+        path = os.path.abspath(os.path.join(self.out_dir, safe_name))
+        out_dir_abs = os.path.abspath(self.out_dir)
+        if not path.startswith(out_dir_abs + os.sep):
+            raise web.HTTPForbidden(text='forbidden path')
+        if not os.path.isfile(path):
+            raise web.HTTPNotFound(text='file not found')
+
+        return web.FileResponse(
+            path,
+            headers={'Content-Disposition': f'attachment; filename="{safe_name}"'},
+        )
 
     async def stream(self, request):
         response = web.StreamResponse(
@@ -667,6 +784,8 @@ class CameraRemoteServer:
         app.router.add_post('/api/overlay-text', self.api_overlay_text)
         app.router.add_post('/api/timelapse/start', self.api_timelapse_start)
         app.router.add_post('/api/timelapse/stop', self.api_timelapse_stop)
+        app.router.add_get('/api/files', self.api_files)
+        app.router.add_get('/download/{name}', self.download_file)
 
         async def on_shutdown(_app):
             self.stop_event.set()

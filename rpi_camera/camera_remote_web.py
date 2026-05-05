@@ -22,8 +22,15 @@ CAMERA_PORT = '/dev/video0'
 AUTO_CONNECT = True
 
 TARGET_FPS = 30.0
-TIMELAPSE_INTERVAL_SEC = 2.0
+TIMELAPSE_INTERVAL_SEC = 1.0
 TIMELAPSE_VIDEO_FPS = 30.0
+
+LASER_SAT_MIN = 150
+LASER_VAL_MIN = 200
+LASER_MAX_AREA = 150
+LASER_CONTRAST_MIN = 30
+LASER_TARGET_N = 1
+LASER_MIN_HITS = 4
 
 
 HTML_PAGE = """<!doctype html>
@@ -163,6 +170,7 @@ HTML_PAGE = """<!doctype html>
           <div><span>ポート</span><span id=\"camport\" class=\"tag\">-</span></div>
           <div><span>録画</span><span id=\"rec\" class=\"tag\">-</span></div>
           <div><span>タイムラプス</span><span id=\"tl\" class=\"tag\">-</span></div>
+          <div><span>レーザー</span><span id=\"laser\" class=\"tag\">-</span></div>
           <div><span>FPS</span><span id=\"fps\" class=\"tag\">-</span></div>
           <div><span>解像度</span><span id=\"res\" class=\"tag\">-</span></div>
         </div>
@@ -184,6 +192,11 @@ HTML_PAGE = """<!doctype html>
           <div class=\"row2\">
             <button id=\"tlStart\" class=\"ok\">TL開始</button>
             <button id=\"tlStop\" class=\"danger\">TL停止</button>
+          </div>
+
+          <div class=\"row2\">
+            <button id=\"laserStart\" class=\"ok\">レーザーON</button>
+            <button id=\"laserStop\" class=\"danger\">レーザーOFF</button>
           </div>
 
           <div class=\"row2\">
@@ -223,6 +236,7 @@ HTML_PAGE = """<!doctype html>
         document.getElementById('device').value = s.camera_port || '-';
         document.getElementById('rec').textContent = s.recording ? 'ON' : 'OFF';
         document.getElementById('tl').textContent = s.timelapse_active ? 'ON' : 'OFF';
+        document.getElementById('laser').textContent = s.laser_enabled ? 'ON' : 'OFF';
         document.getElementById('fps').textContent = s.fps.toFixed(1);
         document.getElementById('res').textContent = s.resolution || '-';
         document.getElementById('savedir').textContent = '保存先: ' + (s.output_dir || '-');
@@ -293,6 +307,16 @@ HTML_PAGE = """<!doctype html>
       await refreshFiles();
     };
 
+    document.getElementById('laserStart').onclick = async () => {
+      await j('/api/laser/start', { method: 'POST' });
+      await refreshStatus();
+    };
+
+    document.getElementById('laserStop').onclick = async () => {
+      await j('/api/laser/stop', { method: 'POST' });
+      await refreshStatus();
+    };
+
     document.getElementById('refreshFiles').onclick = async () => {
       await refreshFiles();
     };
@@ -336,6 +360,174 @@ HTML_PAGE = """<!doctype html>
 """
 
 
+# ---------------------------------------------------------------------------
+# Laser spot detection helpers (adapted from camera_laser.py)
+# ---------------------------------------------------------------------------
+
+def _detect_red_lasers(
+    frame,
+    sat_min=150,
+    val_min=200,
+    min_area=4.0,
+    max_area_abs=80.0,
+    max_targets=3,
+    contrast_min=30,
+):
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    b, g, r = cv2.split(frame)
+    value_channel = hsv[:, :, 2]
+
+    lower1 = np.array([0, sat_min, val_min], dtype=np.uint8)
+    upper1 = np.array([12, 255, 255], dtype=np.uint8)
+    lower2 = np.array([168, sat_min, val_min], dtype=np.uint8)
+    upper2 = np.array([179, 255, 255], dtype=np.uint8)
+    mask = cv2.bitwise_or(
+        cv2.inRange(hsv, lower1, upper1), cv2.inRange(hsv, lower2, upper2)
+    )
+
+    r16 = r.astype(np.int16)
+    dom_map = r16 - np.maximum(g, b).astype(np.int16)
+    white_hot = cv2.bitwise_and(
+        cv2.threshold(value_channel, int(val_min), 255, cv2.THRESH_BINARY)[1],
+        cv2.inRange(dom_map, 10, 255),
+    )
+    mask = cv2.bitwise_or(mask, white_hot)
+
+    kernel = np.ones((3, 3), np.uint8)
+    clean = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+    contours, _ = cv2.findContours(clean, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    dom_req = int(sat_min) // 8
+    candidates = []
+
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        if area < min_area or area > max_area_abs:
+            continue
+
+        (x, y), radius = cv2.minEnclosingCircle(cnt)
+        cx, cy = int(x), int(y)
+
+        y0 = max(0, cy - 3)
+        y1 = min(frame.shape[0], cy + 4)
+        x0 = max(0, cx - 3)
+        x1 = min(frame.shape[1], cx + 4)
+        local_peak = int(value_channel[y0:y1, x0:x1].max()) if y1 > y0 and x1 > x0 else 0
+        if local_peak < int(val_min):
+            continue
+
+        r_surround = 15
+        sy0 = max(0, cy - r_surround)
+        sy1 = min(value_channel.shape[0], cy + r_surround + 1)
+        sx0 = max(0, cx - r_surround)
+        sx1 = min(value_channel.shape[1], cx + r_surround + 1)
+        surround_patch = value_channel[sy0:sy1, sx0:sx1].astype(np.float32)
+        icy = cy - sy0
+        icx = cx - sx0
+        hs, ws = surround_patch.shape
+        yy, xx = np.ogrid[:hs, :ws]
+        d2 = (yy - icy) ** 2 + (xx - icx) ** 2
+        outer_vals = surround_patch[d2 >= 25]
+        if outer_vals.size == 0:
+            continue
+        mean_surround = float(outer_vals.mean())
+        if local_peak - mean_surround < contrast_min:
+            continue
+
+        patch_r = r[y0:y1, x0:x1]
+        patch_g = g[y0:y1, x0:x1]
+        patch_b = b[y0:y1, x0:x1]
+        if patch_r.size == 0:
+            continue
+        dom = float(np.mean(patch_r.astype(np.float32) - np.maximum(patch_g, patch_b)))
+        if local_peak < 255 and dom < dom_req:
+            continue
+
+        score = local_peak + (dom * 2.0) - (area * 0.2)
+        candidates.append((score, cx, cy, float(radius), float(area), local_peak))
+
+    candidates.sort(key=lambda c: c[0], reverse=True)
+    return candidates[: max(1, int(max_targets))]
+
+
+def _update_laser_tracks(
+    tracks,
+    detections,
+    next_track_id,
+    max_miss=3,
+    max_dist=40.0,
+    ema_alpha=0.45,
+    min_hits=4,
+    max_new_tracks=5,
+):
+    updated = []
+    used_track_idx = set()
+    used_det_idx = set()
+
+    confirmed = [t for t in tracks if t['hits'] >= min_hits]
+    tentative = [t for t in tracks if t['hits'] < min_hits]
+    ordered = confirmed + tentative
+
+    pairs = []
+    for ti, tr in enumerate(ordered):
+        for di, det in enumerate(detections):
+            dist = float(np.hypot(tr['x'] - det['x'], tr['y'] - det['y']))
+            pairs.append((dist, ti, di))
+    pairs.sort(key=lambda p: p[0])
+
+    for dist, ti, di in pairs:
+        if dist > max_dist:
+            continue
+        if ti in used_track_idx or di in used_det_idx:
+            continue
+        tr = ordered[ti]
+        det = detections[di]
+        tr['x'] = (ema_alpha * det['x']) + ((1.0 - ema_alpha) * tr['x'])
+        tr['y'] = (ema_alpha * det['y']) + ((1.0 - ema_alpha) * tr['y'])
+        tr['radius'] = (ema_alpha * det['radius']) + ((1.0 - ema_alpha) * tr['radius'])
+        tr['area'] = det['area']
+        tr['peak'] = det['peak']
+        tr['score'] = det['score']
+        tr['miss'] = 0
+        tr['hits'] = tr['hits'] + 1
+        tr['fresh'] = True
+        updated.append(tr)
+        used_track_idx.add(ti)
+        used_det_idx.add(di)
+
+    for ti, tr in enumerate(ordered):
+        if ti in used_track_idx:
+            continue
+        tr['miss'] += 1
+        tr['fresh'] = False
+        if tr['miss'] <= max_miss:
+            updated.append(tr)
+
+    tentative_count = sum(1 for t in updated if t['hits'] < min_hits)
+    for di, det in enumerate(detections):
+        if di in used_det_idx:
+            continue
+        if tentative_count >= max_new_tracks:
+            break
+        updated.append({
+            'id': next_track_id,
+            'x': float(det['x']),
+            'y': float(det['y']),
+            'radius': float(det['radius']),
+            'area': float(det['area']),
+            'peak': int(det['peak']),
+            'score': float(det['score']),
+            'miss': 0,
+            'hits': 1,
+            'fresh': True,
+        })
+        next_track_id += 1
+        tentative_count += 1
+
+    updated.sort(key=lambda t: (t['hits'] >= min_hits, t['score']), reverse=True)
+    return updated, next_track_id
+
+
 def create_temp_output_dir(base_dir):
     stamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     out_dir = os.path.join(base_dir, f'temp_{stamp}')
@@ -374,6 +566,11 @@ class CameraRemoteServer:
         self._prev_frame_ts = None
 
         self._pil_font = self._load_japanese_font()
+
+        self.laser_enabled = False
+        self._laser_tracks = []
+        self._laser_next_track_id = 1
+        self._laser_lock = threading.Lock()
 
         self.stop_event = threading.Event()
         self.capture_thread = threading.Thread(target=self._capture_loop, daemon=True)
@@ -499,11 +696,33 @@ class CameraRemoteServer:
           with self.timelapse_lock:
             tl_count = len(self.timelapse_frames)
           lines.append(f'TL ON ({tl_count})')
+        if self.laser_enabled:
+            lines.append('LASER ON')
 
         y = 36
         for text in lines:
             out = self._draw_text(out, text, 12, y)
             y += 34
+
+        if self.laser_enabled:
+            with self._laser_lock:
+                laser_tracks = list(self._laser_tracks)
+            confirmed = [t for t in laser_tracks if t['hits'] >= LASER_MIN_HITS]
+            draw_tracks = confirmed[:LASER_TARGET_N]
+            for idx, tr in enumerate(draw_tracks, start=1):
+                cx = int(round(tr['x']))
+                cy = int(round(tr['y']))
+                color = (0, 255, 255) if tr['fresh'] else (130, 130, 130)
+                cv2.circle(out, (cx, cy), max(5, int(tr['radius']) + 6), color, 2)
+                cv2.drawMarker(
+                    out, (cx, cy), color,
+                    markerType=cv2.MARKER_CROSS, markerSize=20, thickness=2,
+                )
+                cv2.putText(
+                    out, f'T{idx}({cx},{cy})', (cx + 8, cy - 8),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2, cv2.LINE_AA,
+                )
+
         return out
 
     def _capture_loop(self):
@@ -527,6 +746,31 @@ class CameraRemoteServer:
                 self._fps_ema = (self._fps_ema * 0.85) + (inst_fps * 0.15)
                 self._fps = min(self._fps_ema, self.target_fps * 1.2)
             self._prev_frame_ts = now
+
+            if self.laser_enabled:
+                raw = _detect_red_lasers(
+                    frame,
+                    sat_min=LASER_SAT_MIN,
+                    val_min=LASER_VAL_MIN,
+                    max_area_abs=float(LASER_MAX_AREA),
+                    max_targets=LASER_TARGET_N * 3,
+                    contrast_min=LASER_CONTRAST_MIN,
+                )
+                dets = [
+                    {
+                        'score': float(t[0]),
+                        'x': int(t[1]),
+                        'y': int(t[2]),
+                        'radius': float(t[3]),
+                        'area': float(t[4]),
+                        'peak': int(t[5]),
+                    }
+                    for t in raw
+                ]
+                with self._laser_lock:
+                    self._laser_tracks, self._laser_next_track_id = _update_laser_tracks(
+                        self._laser_tracks, dets, self._laser_next_track_id
+                    )
 
             draw = self._overlay(frame)
             with self.frame_lock:
@@ -624,6 +868,18 @@ class CameraRemoteServer:
         writer.release()
         return path
 
+    def start_laser(self):
+        with self._laser_lock:
+            self._laser_tracks = []
+            self._laser_next_track_id = 1
+        self.laser_enabled = True
+
+    def stop_laser(self):
+        self.laser_enabled = False
+        with self._laser_lock:
+            self._laser_tracks = []
+            self._laser_next_track_id = 1
+
     def status(self):
         resolution = None
         with self.frame_lock:
@@ -635,6 +891,7 @@ class CameraRemoteServer:
             'connected': self.connected,
             'recording': self.recording,
             'timelapse_active': self.timelapse_active,
+            'laser_enabled': self.laser_enabled,
             'fps': float(self._fps),
             'resolution': resolution,
             'camera_port': self.camera_port,
@@ -705,6 +962,14 @@ class CameraRemoteServer:
     async def api_timelapse_stop(self, request):
         path = self.stop_timelapse(save=True)
         return web.json_response({'ok': True, 'path': path})
+
+    async def api_laser_start(self, request):
+        self.start_laser()
+        return web.json_response({'ok': True})
+
+    async def api_laser_stop(self, request):
+        self.stop_laser()
+        return web.json_response({'ok': True})
 
     async def api_files(self, request):
         return web.json_response({'files': self.list_downloadable_files()})
@@ -784,6 +1049,8 @@ class CameraRemoteServer:
         app.router.add_post('/api/overlay-text', self.api_overlay_text)
         app.router.add_post('/api/timelapse/start', self.api_timelapse_start)
         app.router.add_post('/api/timelapse/stop', self.api_timelapse_stop)
+        app.router.add_post('/api/laser/start', self.api_laser_start)
+        app.router.add_post('/api/laser/stop', self.api_laser_stop)
         app.router.add_get('/api/files', self.api_files)
         app.router.add_get('/download/{name}', self.download_file)
 

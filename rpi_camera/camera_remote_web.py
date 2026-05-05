@@ -16,6 +16,9 @@ from PIL import Image, ImageDraw, ImageFont
 # pkill -f rpi_camera/camera_remote_web.py || true
 # ss -lntp | grep ':5000' || true
 
+#  cd /home/rpi/arduino-apps && pgrep -af "rpi_camera/camera_remote_web.py" || true && ss -lntp | grep ':5000' || true
+#  cd /home/rpi/arduino-apps && nohup python rpi_camera/camera_remote_web.py > rpi_camera/camera_remote_web.nohup.log 2>&1 < /dev/null & echo $! && sleep 1 && pgrep -af "rpi_camera/camera_remote_web.py" && ss -lntp | grep ':5000' || true
+
 HOST = '0.0.0.0'
 WEB_PORT = 5000
 CAMERA_PORT = '/dev/video0'

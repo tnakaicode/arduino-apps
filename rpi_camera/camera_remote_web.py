@@ -199,6 +199,19 @@ HTML_PAGE = """<!doctype html>
             <button id=\"laserStop\" class=\"danger\">レーザーOFF</button>
           </div>
 
+          <details id=\"laserDetails\" style=\"margin-top:2px\">
+            <summary style=\"cursor:pointer;font-size:0.88rem;color:var(--muted)\">レーザー検出パラメータ ▶</summary>
+            <div style=\"display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px\">
+              <label style=\"font-size:0.82rem;color:var(--muted)\">S min<input id=\"lpSatMin\" type=\"number\" min=\"0\" max=\"255\" style=\"padding:5px;font-size:0.88rem\" /></label>
+              <label style=\"font-size:0.82rem;color:var(--muted)\">V min<input id=\"lpValMin\" type=\"number\" min=\"0\" max=\"255\" style=\"padding:5px;font-size:0.88rem\" /></label>
+              <label style=\"font-size:0.82rem;color:var(--muted)\">Max area<input id=\"lpMaxArea\" type=\"number\" min=\"1\" style=\"padding:5px;font-size:0.88rem\" /></label>
+              <label style=\"font-size:0.82rem;color:var(--muted)\">Contrast<input id=\"lpContrast\" type=\"number\" min=\"0\" style=\"padding:5px;font-size:0.88rem\" /></label>
+              <label style=\"font-size:0.82rem;color:var(--muted)\">Targets<input id=\"lpTargetN\" type=\"number\" min=\"1\" max=\"10\" style=\"padding:5px;font-size:0.88rem\" /></label>
+              <label style=\"font-size:0.82rem;color:var(--muted)\">Min hits<input id=\"lpMinHits\" type=\"number\" min=\"1\" style=\"padding:5px;font-size:0.88rem\" /></label>
+            </div>
+            <button id=\"laserParamsApply\" class=\"ok\" style=\"margin-top:6px\">パラメータ適用</button>
+          </details>
+
           <div class=\"row2\">
             <button id=\"save\">画像保存</button>
             <button id=\"downloadLatest\" class=\"ok\">最新録画DL</button>
@@ -237,6 +250,15 @@ HTML_PAGE = """<!doctype html>
         document.getElementById('rec').textContent = s.recording ? 'ON' : 'OFF';
         document.getElementById('tl').textContent = s.timelapse_active ? 'ON' : 'OFF';
         document.getElementById('laser').textContent = s.laser_enabled ? 'ON' : 'OFF';
+        if (s.laser_params && !document.getElementById('laserDetails').open) {
+          const p = s.laser_params;
+          document.getElementById('lpSatMin').value = p.sat_min;
+          document.getElementById('lpValMin').value = p.val_min;
+          document.getElementById('lpMaxArea').value = p.max_area;
+          document.getElementById('lpContrast').value = p.contrast_min;
+          document.getElementById('lpTargetN').value = p.target_n;
+          document.getElementById('lpMinHits').value = p.min_hits;
+        }
         document.getElementById('fps').textContent = s.fps.toFixed(1);
         document.getElementById('res').textContent = s.resolution || '-';
         document.getElementById('savedir').textContent = '保存先: ' + (s.output_dir || '-');
@@ -315,6 +337,21 @@ HTML_PAGE = """<!doctype html>
     document.getElementById('laserStop').onclick = async () => {
       await j('/api/laser/stop', { method: 'POST' });
       await refreshStatus();
+    };
+
+    document.getElementById('laserParamsApply').onclick = async () => {
+      await j('/api/laser/params', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sat_min:      parseInt(document.getElementById('lpSatMin').value) || 0,
+          val_min:      parseInt(document.getElementById('lpValMin').value) || 0,
+          max_area:     parseInt(document.getElementById('lpMaxArea').value) || 1,
+          contrast_min: parseInt(document.getElementById('lpContrast').value) || 0,
+          target_n:     parseInt(document.getElementById('lpTargetN').value) || 1,
+          min_hits:     parseInt(document.getElementById('lpMinHits').value) || 1,
+        })
+      });
     };
 
     document.getElementById('refreshFiles').onclick = async () => {
@@ -568,6 +605,12 @@ class CameraRemoteServer:
         self._pil_font = self._load_japanese_font()
 
         self.laser_enabled = False
+        self.laser_sat_min = LASER_SAT_MIN
+        self.laser_val_min = LASER_VAL_MIN
+        self.laser_max_area = LASER_MAX_AREA
+        self.laser_contrast_min = LASER_CONTRAST_MIN
+        self.laser_target_n = LASER_TARGET_N
+        self.laser_min_hits = LASER_MIN_HITS
         self._laser_tracks = []
         self._laser_next_track_id = 1
         self._laser_lock = threading.Lock()
@@ -707,8 +750,8 @@ class CameraRemoteServer:
         if self.laser_enabled:
             with self._laser_lock:
                 laser_tracks = list(self._laser_tracks)
-            confirmed = [t for t in laser_tracks if t['hits'] >= LASER_MIN_HITS]
-            draw_tracks = confirmed[:LASER_TARGET_N]
+            confirmed = [t for t in laser_tracks if t['hits'] >= self.laser_min_hits]
+            draw_tracks = confirmed[:self.laser_target_n]
             for idx, tr in enumerate(draw_tracks, start=1):
                 cx = int(round(tr['x']))
                 cy = int(round(tr['y']))
@@ -750,11 +793,11 @@ class CameraRemoteServer:
             if self.laser_enabled:
                 raw = _detect_red_lasers(
                     frame,
-                    sat_min=LASER_SAT_MIN,
-                    val_min=LASER_VAL_MIN,
-                    max_area_abs=float(LASER_MAX_AREA),
-                    max_targets=LASER_TARGET_N * 3,
-                    contrast_min=LASER_CONTRAST_MIN,
+                    sat_min=self.laser_sat_min,
+                    val_min=self.laser_val_min,
+                    max_area_abs=float(self.laser_max_area),
+                    max_targets=self.laser_target_n * 3,
+                    contrast_min=self.laser_contrast_min,
                 )
                 dets = [
                     {
@@ -868,6 +911,20 @@ class CameraRemoteServer:
         writer.release()
         return path
 
+    def update_laser_params(self, params: dict):
+        if 'sat_min' in params:
+            self.laser_sat_min = int(max(0, min(255, params['sat_min'])))
+        if 'val_min' in params:
+            self.laser_val_min = int(max(0, min(255, params['val_min'])))
+        if 'max_area' in params:
+            self.laser_max_area = int(max(1, params['max_area']))
+        if 'contrast_min' in params:
+            self.laser_contrast_min = int(max(0, params['contrast_min']))
+        if 'target_n' in params:
+            self.laser_target_n = int(max(1, min(10, params['target_n'])))
+        if 'min_hits' in params:
+            self.laser_min_hits = int(max(1, params['min_hits']))
+
     def start_laser(self):
         with self._laser_lock:
             self._laser_tracks = []
@@ -892,6 +949,14 @@ class CameraRemoteServer:
             'recording': self.recording,
             'timelapse_active': self.timelapse_active,
             'laser_enabled': self.laser_enabled,
+            'laser_params': {
+                'sat_min': self.laser_sat_min,
+                'val_min': self.laser_val_min,
+                'max_area': self.laser_max_area,
+                'contrast_min': self.laser_contrast_min,
+                'target_n': self.laser_target_n,
+                'min_hits': self.laser_min_hits,
+            },
             'fps': float(self._fps),
             'resolution': resolution,
             'camera_port': self.camera_port,
@@ -970,6 +1035,18 @@ class CameraRemoteServer:
     async def api_laser_stop(self, request):
         self.stop_laser()
         return web.json_response({'ok': True})
+
+    async def api_laser_params(self, request):
+        data = await request.json()
+        self.update_laser_params(data)
+        return web.json_response({'ok': True, 'laser_params': {
+            'sat_min': self.laser_sat_min,
+            'val_min': self.laser_val_min,
+            'max_area': self.laser_max_area,
+            'contrast_min': self.laser_contrast_min,
+            'target_n': self.laser_target_n,
+            'min_hits': self.laser_min_hits,
+        }})
 
     async def api_files(self, request):
         return web.json_response({'files': self.list_downloadable_files()})
@@ -1051,6 +1128,7 @@ class CameraRemoteServer:
         app.router.add_post('/api/timelapse/stop', self.api_timelapse_stop)
         app.router.add_post('/api/laser/start', self.api_laser_start)
         app.router.add_post('/api/laser/stop', self.api_laser_stop)
+        app.router.add_post('/api/laser/params', self.api_laser_params)
         app.router.add_get('/api/files', self.api_files)
         app.router.add_get('/download/{name}', self.download_file)
 

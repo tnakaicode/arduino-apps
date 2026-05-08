@@ -218,3 +218,10 @@ else:
     while True:
         pin.toggle()
         utime.sleep_ms(500)
+
+
+# 
+# curl -X POST http://192.168.3.100/upload \
+#   -H "Content-Type: text/plain" \
+#   --data-binary @pico_gpio_web/picow_main.py
+#   

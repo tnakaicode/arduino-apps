@@ -73,6 +73,7 @@ HTML = """
     </div>
 
     <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">---</span></div>
+    <div class="status" id="measureText" style="margin-top:6px; color:#4fc3f7;"></div>
   </div>
 
   <script>
@@ -133,6 +134,8 @@ HTML = """
           document.getElementById('statusDot').className = 'dot';
           document.getElementById('statusText').textContent = '停止中';
         }
+        document.getElementById('measureText').textContent =
+          `GP15: DUTY ${data.duty}%  |  GP26: ${data.volt} V`;
       } catch(e) {}
     }, 2000);
   </script>
@@ -204,15 +207,21 @@ def stop():
 @app.route("/status")
 def status():
     resp = send_command("STATUS")
-    # STATUS FREQ:10.0 PIN:1 を解析
+    # STATUS FREQ:10.0 DUTY:50.0 PIN:1 VOLT:1.234 を解析
     freq = current_freq
+    duty = 0.0
+    volt = 0.0
     try:
         for part in resp.split():
             if part.startswith("FREQ:"):
                 freq = float(part[5:])
+            elif part.startswith("DUTY:"):
+                duty = float(part[5:])
+            elif part.startswith("VOLT:"):
+                volt = float(part[5:])
     except Exception:
         pass
-    return jsonify(freq=freq, raw=resp)
+    return jsonify(freq=freq, duty=duty, volt=volt, raw=resp)
 
 
 if __name__ == "__main__":

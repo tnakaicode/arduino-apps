@@ -3,10 +3,11 @@
 #include <Arduino.h>
 #include "wifi_config.h"  // WiFi設定（SSID, パスワード, 静的IP）
 
+// #pragma once
+// 
 // --- WiFi設定（このファイルを編集してください）---
 // const char *ssid     = "ssid"; // WiFiのSSID
 // const char *password = "password";        // WiFiのパスワード
-
 // --- 静的IPアドレス設定 ---
 // IPAddress WIFI_LOCAL_IP(192, 168, 3, 123); // ArduinoのIPアドレス
 // IPAddress WIFI_GATEWAY (192, 168, 3,   1); // ルーターのIPアドレス

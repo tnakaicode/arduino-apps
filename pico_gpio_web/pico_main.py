@@ -32,9 +32,14 @@ def toggle_loop():
     state = False
     while True:
         line = None
-        events = poller.poll(0)
-        if events:
-            line = sys.stdin.readline().strip()
+        try:
+            events = poller.poll(0)
+            if events:
+                line = sys.stdin.readline().strip()
+        except Exception:
+            # シリアル切断時も継続（状態は保持）
+            utime.sleep_ms(100)
+            continue
 
         if line:
             if line.startswith("FREQ:"):

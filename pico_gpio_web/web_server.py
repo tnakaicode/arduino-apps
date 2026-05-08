@@ -144,9 +144,19 @@ HTML = """
 def open_serial():
     global ser
     try:
-        ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1, dsrdtr=False)
-        ser.dtr = False  # DTRをLowに保持してPicoのリセットを防ぐ
-        time.sleep(1.0)  # Pico起動待ち
+        # HUPCLを無効化（ポートopen/close時にDTRがトグルしてPicoがリセットされるのを防ぐ）
+        import subprocess
+        subprocess.run(["stty", "-F", SERIAL_PORT, "-hupcl"], check=False)
+        ser = serial.Serial()
+        ser.port = SERIAL_PORT
+        ser.baudrate = BAUD_RATE
+        ser.timeout = 1
+        ser.dsrdtr = False
+        ser.rtscts = False
+        ser.open()
+        ser.dtr = False
+        ser.rts = False
+        time.sleep(0.3)
         ser.reset_input_buffer()
         print(f"[Serial] Connected: {SERIAL_PORT}")
     except Exception as e:
@@ -206,6 +216,9 @@ def status():
 
 
 if __name__ == "__main__":
+    import logging
+    log = logging.getLogger('werkzeug')
+    log.setLevel(logging.ERROR)  # アクセスログを抑制
     open_serial()
     print("Web server starting on http://0.0.0.0:8080")
     app.run(host="0.0.0.0", port=8080, debug=False)

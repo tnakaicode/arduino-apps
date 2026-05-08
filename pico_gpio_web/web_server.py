@@ -144,8 +144,10 @@ HTML = """
 def open_serial():
     global ser
     try:
-        ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
-        time.sleep(0.5)
+        ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1, dsrdtr=False)
+        ser.dtr = False  # DTRをLowに保持してPicoのリセットを防ぐ
+        time.sleep(1.0)  # Pico起動待ち
+        ser.reset_input_buffer()
         print(f"[Serial] Connected: {SERIAL_PORT}")
     except Exception as e:
         print(f"[Serial] Failed to open {SERIAL_PORT}: {e}")

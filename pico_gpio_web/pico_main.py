@@ -4,6 +4,8 @@
 #           "STOP\n"       → 停止
 
 import machine
+import sys
+import uselect
 import utime
 
 PIN_NUM = 15  # 制御するGPIOピン番号 (GP15)
@@ -24,19 +26,14 @@ def set_frequency(hz):
 
 
 def toggle_loop():
+    poller = uselect.poll()
+    poller.register(sys.stdin, uselect.POLLIN)
     last_toggle = utime.ticks_us()
     state = False
     while True:
-        # シリアルにデータがあれば読む
-        if utime.ticks_diff(utime.ticks_ms(), 0) >= 0:  # always true, just yield
-            pass
-
         line = None
-        # ノンブロッキング読み込み
-        import sys
-        import select
-        r, _, _ = select.select([sys.stdin], [], [], 0)
-        if r:
+        events = poller.poll(0)
+        if events:
             line = sys.stdin.readline().strip()
 
         if line:
@@ -46,14 +43,14 @@ def toggle_loop():
                     if hz < 0:
                         hz = 0
                     set_frequency(hz)
-                    print(f"OK FREQ:{hz}")
+                    print("OK FREQ:" + str(hz))
                 except ValueError:
                     print("ERR invalid frequency")
             elif line == "STOP":
                 set_frequency(0)
                 print("OK STOP")
             elif line == "STATUS":
-                print(f"STATUS FREQ:{freq_hz} PIN:{pin.value()}")
+                print("STATUS FREQ:" + str(freq_hz) + " PIN:" + str(pin.value()))
 
         # GPIO制御
         if running and freq_hz > 0:

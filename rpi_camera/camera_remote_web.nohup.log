@@ -1,24 +1,2 @@
-[ WARN:0@0.224] global cap.cpp:215 open VIDEOIO(V4L2): backend is generally available but can't be used to capture by name
-[video4linux2,v4l2 @ 0x24f24520] ioctl(VIDIOC_G_INPUT): Inappropriate ioctl for device
-[ WARN:0@0.225] global cap.cpp:215 open VIDEOIO(V4L2): backend is generally available but can't be used to capture by name
-[ WARN:0@0.225] global cap.cpp:215 open VIDEOIO(V4L2): backend is generally available but can't be used to capture by name
-[video4linux2,v4l2 @ 0x24f2b3e0] Not a video capture device.
-[ WARN:0@0.226] global cap.cpp:215 open VIDEOIO(V4L2): backend is generally available but can't be used to capture by name
-[video4linux2,v4l2 @ 0x24f2b3e0] Not a video capture device.
-[ WARN:0@0.226] global cap.cpp:215 open VIDEOIO(V4L2): backend is generally available but can't be used to capture by name
-[video4linux2,v4l2 @ 0x24f2b3e0] Not a video capture device.
-[ WARN:0@0.226] global cap.cpp:215 open VIDEOIO(V4L2): backend is generally available but can't be used to capture by name
-[video4linux2,v4l2 @ 0x24f2b3e0] Not a video capture device.
-[Camera] connected to port=/dev/video1
-[Web] open: http://0.0.0.0:5000
-Traceback (most recent call last):
-  File "/home/rpi/arduino-apps/rpi_camera/camera_remote_web.py", line 1219, in <module>
-    main()
-  File "/home/rpi/arduino-apps/rpi_camera/camera_remote_web.py", line 1215, in main
-    web.run_app(server.make_app(), host=HOST, port=WEB_PORT)
-  File "/home/rpi/.local/lib/python3.11/site-packages/aiohttp/web.py", line 517, in run_app
-    loop.run_until_complete(main_task)
-  File "/usr/lib/python3.11/asyncio/base_events.py", line 653, in run_until_complete
-    return future.result()
-           ^^^^^^^^^^^^^^^
-OSError: [Errno 98] error while attempting to bind on address ('0.0.0.0', 5000): address already in use
+[ WARN:0@0.491] global cap.cpp:215 open VIDEOIO(V4L2): backend is generally available but can't be used to capture by name
+[video4linux2,v4l2 @ 0x87c47f0] ioctl(VIDIOC_G_INPUT): Inappropriate ioctl for device

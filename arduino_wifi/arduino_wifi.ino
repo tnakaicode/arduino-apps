@@ -20,6 +20,11 @@
 void print_network_info();
 String get_all_pin_status();
 void send_all_pin_status();
+String get_http_path(const String &req);
+String get_query_value(const String &path, const String &key);
+void apply_pin_command(const String &path);
+void send_web_page(WiFiClient &client);
+void send_http_redirect(WiFiClient &client, const String &location);
 
 // --- WiFi状態 ---
 int status = WL_IDLE_STATUS;          // WiFiの状態格納
@@ -149,17 +154,18 @@ void loop()
   {
     String req = client.readStringUntil('\r');
     client.flush();
-    if (req.indexOf("GET /") >= 0)
+    if (req.startsWith("GET "))
     {
-      String html = "<html><head><meta http-equiv='refresh' content='1'></head><body>";
-      html += "<h2>Arduino Pin Status</h2><pre>";
-      html += get_all_pin_status();
-      html += "</pre></body></html>";
-      client.println("HTTP/1.1 200 OK");
-      client.println("Content-Type: text/html");
-      client.println("Connection: close");
-      client.println();
-      client.println(html);
+      String path = get_http_path(req);
+      if (path.startsWith("/cmd?"))
+      {
+        apply_pin_command(path);
+        send_http_redirect(client, "/");
+      }
+      else
+      {
+        send_web_page(client);
+      }
     }
     delay(1);
     client.stop();
@@ -223,6 +229,12 @@ void loop()
     else if (cmd == "NETINFO")
     {
       print_network_info();
+    }
+    else if (cmd.equalsIgnoreCase("IP"))
+    {
+      Serial.print("IP: ");
+      Serial.println(WiFi.localIP());
+      Serial.println("OK");
     }
     else if (cmd.equalsIgnoreCase("WIFICONNECT"))
     {
@@ -428,4 +440,202 @@ void send_all_pin_status()
       result += ",";
   }
   Serial.println(result);
+}
+
+String get_http_path(const String &req)
+{
+  int first_space = req.indexOf(' ');
+  if (first_space < 0)
+  {
+    return "/";
+  }
+  int second_space = req.indexOf(' ', first_space + 1);
+  if (second_space < 0)
+  {
+    return "/";
+  }
+  return req.substring(first_space + 1, second_space);
+}
+
+String get_query_value(const String &path, const String &key)
+{
+  int qidx = path.indexOf('?');
+  if (qidx < 0)
+  {
+    return "";
+  }
+  String query = path.substring(qidx + 1);
+  String pat = key + "=";
+  int kidx = query.indexOf(pat);
+  if (kidx < 0)
+  {
+    return "";
+  }
+  int start = kidx + pat.length();
+  int end = query.indexOf('&', start);
+  if (end < 0)
+  {
+    end = query.length();
+  }
+  return query.substring(start, end);
+}
+
+void apply_pin_command(const String &path)
+{
+  String op = get_query_value(path, "op");
+  String pin_str = get_query_value(path, "pin");
+  String val = get_query_value(path, "v");
+
+  if (pin_str.startsWith("D"))
+  {
+    int pin = pin_str.substring(1).toInt();
+    if (pin < 2 || pin > 13)
+    {
+      return;
+    }
+
+    if (op == "mode")
+    {
+      if (val == "OUTPUT")
+      {
+        pinMode(pin, OUTPUT);
+        digital_modes[pin] = "OUTPUT";
+      }
+      else if (val == "INPUT_PULLUP")
+      {
+        pinMode(pin, INPUT_PULLUP);
+        digital_modes[pin] = "INPUT_PULLUP";
+      }
+      else
+      {
+        pinMode(pin, INPUT);
+        digital_modes[pin] = "INPUT";
+      }
+    }
+    else if (op == "write")
+    {
+      if (digital_modes[pin] == "OUTPUT")
+      {
+        int dval = val.toInt() != 0 ? HIGH : LOW;
+        digitalWrite(pin, dval);
+        digital_values[pin] = dval;
+      }
+    }
+    return;
+  }
+
+  if (pin_str.startsWith("A"))
+  {
+    int idx = pin_str.substring(1).toInt();
+    if (idx < 0 || idx > 5)
+    {
+      return;
+    }
+
+    if (op == "mode")
+    {
+      if (val == "OUTPUT")
+      {
+        analog_modes[idx] = "OUTPUT";
+      }
+      else
+      {
+        analog_modes[idx] = "INPUT";
+      }
+    }
+    else if (op == "pwm")
+    {
+      if (analog_modes[idx] == "OUTPUT")
+      {
+        int pwm = val.toInt();
+        if (pwm < 0)
+          pwm = 0;
+        if (pwm > 255)
+          pwm = 255;
+        analogWrite(idx + A0, pwm);
+        analog_pwm_values[idx] = pwm;
+      }
+    }
+  }
+}
+
+void send_http_redirect(WiFiClient &client, const String &location)
+{
+  client.println("HTTP/1.1 302 Found");
+  client.print("Location: ");
+  client.println(location);
+  client.println("Connection: close");
+  client.println();
+}
+
+void send_web_page(WiFiClient &client)
+{
+  String html = "<!doctype html><html><head><meta charset='utf-8'>";
+  html += "<meta name='viewport' content='width=device-width,initial-scale=1'>";
+  html += "<meta http-equiv='refresh' content='2'>";
+  html += "<title>UNO R4 WiFi Pin Control</title>";
+  html += "<style>body{font-family:Arial,sans-serif;margin:12px;}table{border-collapse:collapse;width:100%;max-width:960px;}th,td{border:1px solid #ccc;padding:6px;font-size:13px;}a{margin-right:6px;white-space:nowrap;}h2,h3{margin:8px 0;}small{color:#555;}</style>";
+  html += "</head><body>";
+  html += "<h2>UNO R4 WiFi Pin Control</h2>";
+  html += "<small>IP: ";
+  html += WiFi.localIP().toString();
+  html += " | SSID: ";
+  html += WiFi.SSID();
+  html += "</small>";
+
+  html += "<h3>Digital Pins (D2-D13)</h3><table><tr><th>Pin</th><th>Mode</th><th>Value</th><th>Mode Cmd</th><th>Value Cmd</th></tr>";
+  for (int pin = 2; pin <= 13; pin++)
+  {
+    html += "<tr><td>D" + String(pin) + "</td>";
+    html += "<td>" + digital_modes[pin] + "</td>";
+    html += "<td>";
+    if (digital_modes[pin] == "OUTPUT")
+    {
+      html += String(digital_values[pin]);
+    }
+    else
+    {
+      html += String(digitalRead(pin));
+    }
+    html += "</td><td>";
+    html += "<a href='/cmd?op=mode&pin=D" + String(pin) + "&v=INPUT'>INPUT</a>";
+    html += "<a href='/cmd?op=mode&pin=D" + String(pin) + "&v=INPUT_PULLUP'>PULLUP</a>";
+    html += "<a href='/cmd?op=mode&pin=D" + String(pin) + "&v=OUTPUT'>OUTPUT</a>";
+    html += "</td><td>";
+    html += "<a href='/cmd?op=write&pin=D" + String(pin) + "&v=1'>HIGH</a>";
+    html += "<a href='/cmd?op=write&pin=D" + String(pin) + "&v=0'>LOW</a>";
+    html += "</td></tr>";
+  }
+  html += "</table>";
+
+  html += "<h3>Analog Pins (A0-A5)</h3><table><tr><th>Pin</th><th>Mode</th><th>Value</th><th>Mode Cmd</th><th>PWM Cmd</th></tr>";
+  for (int i = 0; i < 6; i++)
+  {
+    html += "<tr><td>A" + String(i) + "</td>";
+    html += "<td>" + analog_modes[i] + "</td>";
+    html += "<td>";
+    if (analog_modes[i] == "OUTPUT")
+    {
+      html += String(analog_pwm_values[i]);
+    }
+    else
+    {
+      html += String(analogRead(i));
+    }
+    html += "</td><td>";
+    html += "<a href='/cmd?op=mode&pin=A" + String(i) + "&v=INPUT'>INPUT</a>";
+    html += "<a href='/cmd?op=mode&pin=A" + String(i) + "&v=OUTPUT'>OUTPUT</a>";
+    html += "</td><td>";
+    html += "<a href='/cmd?op=pwm&pin=A" + String(i) + "&v=0'>0</a>";
+    html += "<a href='/cmd?op=pwm&pin=A" + String(i) + "&v=128'>128</a>";
+    html += "<a href='/cmd?op=pwm&pin=A" + String(i) + "&v=255'>255</a>";
+    html += "</td></tr>";
+  }
+  html += "</table></body></html>";
+
+  client.println("HTTP/1.1 200 OK");
+  client.println("Content-Type: text/html");
+  client.println("Connection: close");
+  client.println();
+  client.println(html);
 }

@@ -205,5 +205,5 @@ def status():
 
 if __name__ == "__main__":
     open_serial()
-    print("Web server starting on http://0.0.0.0:5000")
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    print("Web server starting on http://0.0.0.0:8080")
+    app.run(host="0.0.0.0", port=8080, debug=False)

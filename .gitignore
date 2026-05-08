@@ -3,3 +3,4 @@
 venv/*
 
 pico_gpio_web/config.txt
+arduino_wifi/wifi_config.h

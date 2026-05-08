@@ -1,15 +1,14 @@
 
 #include <WiFiS3.h>
 #include <Arduino.h>
+#include "wifi_config.h"  // WiFi設定（SSID, パスワード, 静的IP）
 
 // --- 関数プロトタイプ宣言 ---
 void print_network_info();
 String get_all_pin_status();
 void send_all_pin_status();
 
-// --- WiFi設定 ---
-const char *ssid = "60AAEFB69517-5G"; // ←ここにWiFiのSSID
-const char *password = "nakaihome";   // ←ここにWiFiのパスワード
+// --- WiFi状態 ---
 int status = WL_IDLE_STATUS;          // WiFiの状態格納
 WiFiServer server(80);
 // デジタルピンのモード管理
@@ -88,12 +87,8 @@ void setup()
   digital_modes[13] = "INPUT";
   digital_values[13] = 0;
 
-  // --- WiFi静的IP設定 ---
-  IPAddress local_ip(192, 168, 3, 123); // ←希望のIPアドレスに変更可
-  IPAddress gateway(192, 168, 3, 1);    // ←ルーターのIP
-  IPAddress subnet(255, 255, 255, 0);   // ←サブネットマスク
-  IPAddress dns(192, 168, 3, 1);        // ←DNS（通常はgatewayと同じ）
-  WiFi.config(local_ip, dns, gateway, subnet); // ←この行で静的IPを設定
+  // --- WiFi静的IP設定（wifi_config.hから読み込み）---
+  WiFi.config(WIFI_LOCAL_IP, WIFI_DNS, WIFI_GATEWAY, WIFI_SUBNET);
   WiFi.begin(ssid, password);
 
   // WiFiモジュールの確認

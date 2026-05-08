@@ -147,9 +147,16 @@ HTML = """
 def open_serial():
     global ser
     try:
-        # HUPCLを無効化（ポートopen/close時にDTRがトグルしてPicoがリセットされるのを防ぐ）
-        import subprocess
-        subprocess.run(["stty", "-F", SERIAL_PORT, "-hupcl"], check=False)
+        import subprocess, termios, fcntl
+        # ポートを開く前にhupcl無効化（DTRトグルによるPicoリセット防止）
+        subprocess.run(["stty", "-F", SERIAL_PORT, "-hupcl", "115200"], check=False)
+        # 一度rawでopenしてDTRを下げてから閉じる
+        fd = open(SERIAL_PORT, 'rb+', buffering=0)
+        attrs = termios.tcgetattr(fd)
+        attrs[2] &= ~termios.HUPCL  # HUPCL クリア
+        termios.tcsetattr(fd, termios.TCSANOW, attrs)
+        fd.close()
+        # pyserialで開く（この時点でDTRトグルが起きない）
         ser = serial.Serial()
         ser.port = SERIAL_PORT
         ser.baudrate = BAUD_RATE
@@ -222,6 +229,45 @@ def status():
     except Exception:
         pass
     return jsonify(freq=freq, duty=duty, volt=volt, raw=resp)
+
+
+@app.route("/upload", methods=["POST"])
+def upload():
+    """Picoへファイルを書き込む。シリアルを一時解放してampyを実行する。"""
+    global ser
+    import subprocess, os
+    data = request.get_json(force=True)
+    local_path = data.get("file", "pico_gpio_web/pico_combined.py")
+    remote_path = data.get("remote", "/main.py")
+
+    # パストラバーサル防止
+    local_path = os.path.normpath(local_path)
+    if not os.path.isfile(local_path):
+        return jsonify(ok=False, error=f"File not found: {local_path}"), 400
+
+    # シリアルを閉じる
+    with ser_lock:
+        if ser and ser.is_open:
+            ser.close()
+        ser = None
+
+    try:
+        result = subprocess.run(
+            ["venv/bin/python", "-m", "ampy.cli",
+             "--port", SERIAL_PORT, "--baud", str(BAUD_RATE),
+             "put", local_path, remote_path],
+            capture_output=True, text=True, timeout=30,
+            cwd="/home/rpi/arduino-apps"
+        )
+        ok = result.returncode == 0
+        msg = result.stdout + result.stderr
+    except Exception as e:
+        ok = False
+        msg = str(e)
+
+    # シリアル再接続
+    open_serial()
+    return jsonify(ok=ok, message=msg.strip() or "書き込み完了")
 
 
 if __name__ == "__main__":

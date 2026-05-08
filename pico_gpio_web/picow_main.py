@@ -7,9 +7,14 @@ import machine
 import utime
 import gc
 
-# === WiFi設定 ===
-WIFI_SSID = "60AAEFB69517-5G"
-WIFI_PASS = "YOUR_PASSWORD_HERE"  # ← パスワードを入力
+# === WiFi設定（config.txtから読み込み） ===
+try:
+    with open('/config.txt', 'r') as f:
+        WIFI_SSID = f.readline().strip()
+        WIFI_PASS = f.readline().strip()
+except:
+    WIFI_SSID = "default_ssid"
+    WIFI_PASS = "default_pass"
 
 # === GPIO設定 ===
 PIN_NUM = 15
@@ -50,6 +55,7 @@ def get_voltage():
 def connect_wifi():
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
+    wlan.ifconfig(('192.168.3.100', '255.255.255.0', '192.168.3.1', '192.168.3.1'))
     wlan.connect(WIFI_SSID, WIFI_PASS)
     print("WiFi接続中...")
     for _ in range(20):
@@ -160,6 +166,29 @@ def handle(conn):
             volt = get_voltage()
             body = '{{"freq":{},"volt":{},"pin":{}}}'.format(freq_hz, volt, pin.value())
             conn.send('HTTP/1.0 200 OK\r\nContent-Type: application/json\r\n\r\n' + body)
+
+        elif path == '/upload' and req.startswith('POST'):
+            # POSTボディを取得
+            if '\r\n\r\n' in req:
+                body = req.split('\r\n\r\n', 1)[1]
+            else:
+                body = ''
+            # Content-Lengthで追加受信
+            cl = 0
+            for line in req.split('\r\n'):
+                if line.lower().startswith('content-length:'):
+                    cl = int(line.split(':', 1)[1].strip())
+            while len(body.encode('utf-8', 'ignore')) < cl:
+                chunk = conn.recv(512)
+                if not chunk:
+                    break
+                body += chunk.decode('utf-8', 'ignore')
+            with open('/main.py', 'w') as f:
+                f.write(body)
+            conn.send('HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\n\r\nOK UPLOADED. Rebooting...')
+            conn.close()
+            utime.sleep(1)
+            machine.reset()
 
         else:
             conn.send('HTTP/1.0 404 Not Found\r\n\r\nNot Found')

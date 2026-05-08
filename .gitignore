@@ -1,3 +1,5 @@
 **/temp_*/*
 **.pyc
 venv/*
+
+pico_gpio_web/config.txt

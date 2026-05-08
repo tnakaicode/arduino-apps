@@ -3,6 +3,19 @@
 #include <Arduino.h>
 #include "wifi_config.h"  // WiFi設定（SSID, パスワード, 静的IP）
 
+// --- WiFi設定（このファイルを編集してください）---
+// const char *ssid     = "ssid"; // WiFiのSSID
+// const char *password = "password";        // WiFiのパスワード
+
+// --- 静的IPアドレス設定 ---
+// IPAddress WIFI_LOCAL_IP(192, 168, 3, 123); // ArduinoのIPアドレス
+// IPAddress WIFI_GATEWAY (192, 168, 3,   1); // ルーターのIPアドレス
+// IPAddress WIFI_SUBNET  (255, 255, 255, 0); // サブネットマスク
+// IPAddress WIFI_DNS     (192, 168, 3,   1); // DNS（通常はゲートウェイと同じ）
+
+// arduino-cli compile --fqbn arduino:renesas_uno:unor4wifi .
+// arduino-cli upload --fqbn arduino:renesas_uno:unor4wifi --port COM5 .
+
 // --- 関数プロトタイプ宣言 ---
 void print_network_info();
 String get_all_pin_status();

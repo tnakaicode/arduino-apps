@@ -2,3 +2,483 @@
 Web server starting on http://0.0.0.0:8080
  * Serving Flask app 'web_server'
  * Debug mode: off
+[2026-05-09 00:45:57,101] ERROR in app: Exception on /status [GET]
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 621, in write
+    n = os.write(self.fd, d)
+        ^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 5] Input/output error
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 216, in status
+    resp = send_command("STATUS")
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 184, in send_command
+    ser.write((cmd + "\n").encode())
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 655, in write
+    raise SerialException('write failed: {}'.format(e))
+serial.serialutil.SerialException: write failed: [Errno 5] Input/output error
+[2026-05-09 00:45:59,106] ERROR in app: Exception on /status [GET]
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 621, in write
+    n = os.write(self.fd, d)
+        ^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 5] Input/output error
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 216, in status
+    resp = send_command("STATUS")
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 184, in send_command
+    ser.write((cmd + "\n").encode())
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 655, in write
+    raise SerialException('write failed: {}'.format(e))
+serial.serialutil.SerialException: write failed: [Errno 5] Input/output error
+[2026-05-09 00:46:01,099] ERROR in app: Exception on /status [GET]
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 621, in write
+    n = os.write(self.fd, d)
+        ^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 5] Input/output error
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 216, in status
+    resp = send_command("STATUS")
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 184, in send_command
+    ser.write((cmd + "\n").encode())
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 655, in write
+    raise SerialException('write failed: {}'.format(e))
+serial.serialutil.SerialException: write failed: [Errno 5] Input/output error
+[2026-05-09 00:46:03,109] ERROR in app: Exception on /status [GET]
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 621, in write
+    n = os.write(self.fd, d)
+        ^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 5] Input/output error
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 216, in status
+    resp = send_command("STATUS")
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 184, in send_command
+    ser.write((cmd + "\n").encode())
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 655, in write
+    raise SerialException('write failed: {}'.format(e))
+serial.serialutil.SerialException: write failed: [Errno 5] Input/output error
+[2026-05-09 00:46:05,120] ERROR in app: Exception on /status [GET]
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 621, in write
+    n = os.write(self.fd, d)
+        ^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 5] Input/output error
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 216, in status
+    resp = send_command("STATUS")
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 184, in send_command
+    ser.write((cmd + "\n").encode())
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 655, in write
+    raise SerialException('write failed: {}'.format(e))
+serial.serialutil.SerialException: write failed: [Errno 5] Input/output error
+[2026-05-09 00:46:07,285] ERROR in app: Exception on /status [GET]
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 621, in write
+    n = os.write(self.fd, d)
+        ^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 5] Input/output error
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 216, in status
+    resp = send_command("STATUS")
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 184, in send_command
+    ser.write((cmd + "\n").encode())
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 655, in write
+    raise SerialException('write failed: {}'.format(e))
+serial.serialutil.SerialException: write failed: [Errno 5] Input/output error
+[2026-05-09 00:46:09,107] ERROR in app: Exception on /status [GET]
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 621, in write
+    n = os.write(self.fd, d)
+        ^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 5] Input/output error
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 216, in status
+    resp = send_command("STATUS")
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 184, in send_command
+    ser.write((cmd + "\n").encode())
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 655, in write
+    raise SerialException('write failed: {}'.format(e))
+serial.serialutil.SerialException: write failed: [Errno 5] Input/output error
+[2026-05-09 00:46:11,122] ERROR in app: Exception on /status [GET]
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 621, in write
+    n = os.write(self.fd, d)
+        ^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 5] Input/output error
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 216, in status
+    resp = send_command("STATUS")
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 184, in send_command
+    ser.write((cmd + "\n").encode())
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 655, in write
+    raise SerialException('write failed: {}'.format(e))
+serial.serialutil.SerialException: write failed: [Errno 5] Input/output error
+[2026-05-09 00:46:16,108] ERROR in app: Exception on /status [GET]
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 621, in write
+    n = os.write(self.fd, d)
+        ^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 5] Input/output error
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 216, in status
+    resp = send_command("STATUS")
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 184, in send_command
+    ser.write((cmd + "\n").encode())
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 655, in write
+    raise SerialException('write failed: {}'.format(e))
+serial.serialutil.SerialException: write failed: [Errno 5] Input/output error
+[2026-05-09 00:47:16,119] ERROR in app: Exception on /status [GET]
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 621, in write
+    n = os.write(self.fd, d)
+        ^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 5] Input/output error
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 216, in status
+    resp = send_command("STATUS")
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 184, in send_command
+    ser.write((cmd + "\n").encode())
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 655, in write
+    raise SerialException('write failed: {}'.format(e))
+serial.serialutil.SerialException: write failed: [Errno 5] Input/output error
+[2026-05-09 00:48:16,100] ERROR in app: Exception on /status [GET]
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 621, in write
+    n = os.write(self.fd, d)
+        ^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 5] Input/output error
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 216, in status
+    resp = send_command("STATUS")
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 184, in send_command
+    ser.write((cmd + "\n").encode())
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 655, in write
+    raise SerialException('write failed: {}'.format(e))
+serial.serialutil.SerialException: write failed: [Errno 5] Input/output error
+[2026-05-09 00:49:16,106] ERROR in app: Exception on /status [GET]
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 621, in write
+    n = os.write(self.fd, d)
+        ^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 5] Input/output error
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 216, in status
+    resp = send_command("STATUS")
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 184, in send_command
+    ser.write((cmd + "\n").encode())
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 655, in write
+    raise SerialException('write failed: {}'.format(e))
+serial.serialutil.SerialException: write failed: [Errno 5] Input/output error
+[2026-05-09 00:50:16,118] ERROR in app: Exception on /status [GET]
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 621, in write
+    n = os.write(self.fd, d)
+        ^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 5] Input/output error
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 216, in status
+    resp = send_command("STATUS")
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 184, in send_command
+    ser.write((cmd + "\n").encode())
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 655, in write
+    raise SerialException('write failed: {}'.format(e))
+serial.serialutil.SerialException: write failed: [Errno 5] Input/output error
+[2026-05-09 00:51:16,107] ERROR in app: Exception on /status [GET]
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 621, in write
+    n = os.write(self.fd, d)
+        ^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 5] Input/output error
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 216, in status
+    resp = send_command("STATUS")
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 184, in send_command
+    ser.write((cmd + "\n").encode())
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 655, in write
+    raise SerialException('write failed: {}'.format(e))
+serial.serialutil.SerialException: write failed: [Errno 5] Input/output error
+[2026-05-09 00:52:16,098] ERROR in app: Exception on /status [GET]
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 621, in write
+    n = os.write(self.fd, d)
+        ^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 5] Input/output error
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 216, in status
+    resp = send_command("STATUS")
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 184, in send_command
+    ser.write((cmd + "\n").encode())
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 655, in write
+    raise SerialException('write failed: {}'.format(e))
+serial.serialutil.SerialException: write failed: [Errno 5] Input/output error
+[2026-05-09 00:53:16,112] ERROR in app: Exception on /status [GET]
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 621, in write
+    n = os.write(self.fd, d)
+        ^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 5] Input/output error
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 216, in status
+    resp = send_command("STATUS")
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/pico_gpio_web/web_server.py", line 184, in send_command
+    ser.write((cmd + "\n").encode())
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/serial/serialposix.py", line 655, in write
+    raise SerialException('write failed: {}'.format(e))
+serial.serialutil.SerialException: write failed: [Errno 5] Input/output error

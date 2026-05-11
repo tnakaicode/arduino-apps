@@ -154,6 +154,7 @@ void serialReaderThread(void *arg)
     const std::string lastRxMsPv = cfg->pvPrefix + "ARDUINO:LAST_RX_MS";
     const std::string loopHzPv = cfg->pvPrefix + "ARDUINO:LOOP_HZ";
     const std::string loopMsPv = cfg->pvPrefix + "ARDUINO:LOOP_MS";
+    const std::string loopUsPv = cfg->pvPrefix + "ARDUINO:LOOP_US";
     const std::string uptimeMsPv = cfg->pvPrefix + "ARDUINO:UPTIME_MS";
 
     const speed_t baud = parseBaud(cfg->baudRate.c_str());
@@ -176,6 +177,7 @@ void serialReaderThread(void *arg)
     putLongPV(lastRxMsPv, 0);
     putLongPV(loopHzPv, 0);
     putLongPV(loopMsPv, 0);
+    putLongPV(loopUsPv, 0);
     putLongPV(uptimeMsPv, 0);
 
     errlogPrintf("rotarySerial: thread started prefix=%s port=%s baud=%s\n",
@@ -262,12 +264,16 @@ void serialReaderThread(void *arg)
 
                 long loopHz = 0;
                 long loopMs = 0;
+                long loopUs = 0;
                 long uptimeMs = 0;
                 if (extractTaggedLong(line, ",LOOP_HZ:", &loopHz)) {
                     putLongPV(loopHzPv, loopHz);
                 }
                 if (extractTaggedLong(line, ",LOOP_MS:", &loopMs)) {
                     putLongPV(loopMsPv, loopMs);
+                }
+                if (extractTaggedLong(line, ",LOOP_US:", &loopUs)) {
+                    putLongPV(loopUsPv, loopUs);
                 }
                 if (extractTaggedLong(line, ",UPTIME_MS:", &uptimeMs)) {
                     putLongPV(uptimeMsPv, uptimeMs);

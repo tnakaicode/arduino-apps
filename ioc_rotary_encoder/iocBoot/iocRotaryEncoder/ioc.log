@@ -135,3 +135,24 @@ iocRun: All initialization complete
 rotaryStartSerialReader: started serial reader thread prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
 rotarySerial: thread started prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
 rotarySerial: serial open/configured (/dev/ttyACM0)
+Starting iocInit
+iocRun: All initialization complete
+rotaryStartSerialReader: started serial reader thread prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+rotarySerial: thread started prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+rotarySerial: serial open/configured (/dev/ttyACM0)
+Starting iocInit
+iocRun: All initialization complete
+rotaryStartSerialReader: started serial reader thread prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+rotarySerial: thread started prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+rotarySerial: serial open/configured (/dev/ttyACM0)
+[31;1mERROR[0m: Can't set 'RE:ch0:ARDUINO:LOOP_US.DESC' to 'Arduino loop period microseconds reported by firmware'  : String is too long
+[31;1mERROR[0m:  at or before ')' in file "db/RotaryEncoder.db" line 97
+
+ 97 |     field(DESC, "Arduino loop period microseconds reported by firmware")
+
+[31;1mERROR[0m failed to load 'db/RotaryEncoder.db'
+Starting iocInit
+iocRun: All initialization complete
+rotaryStartSerialReader: started serial reader thread prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+rotarySerial: thread started prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+rotarySerial: serial open/configured (/dev/ttyACM0)

@@ -1,0 +1,15 @@
+[Unit]
+Description=Rotary Encoder EPICS IOC
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/rpi/arduino-apps/ioc_rotary_encoder/iocBoot/iocRotaryEncoder
+ExecStart=/home/rpi/arduino-apps/ioc_rotary_encoder/bin/linux-aarch64/RotaryEncoder /home/rpi/arduino-apps/ioc_rotary_encoder/iocBoot/iocRotaryEncoder/st.cmd
+Restart=on-failure
+RestartSec=2
+StandardOutput=append:/home/rpi/arduino-apps/ioc_rotary_encoder/iocBoot/iocRotaryEncoder/ioc.log
+StandardError=append:/home/rpi/arduino-apps/ioc_rotary_encoder/iocBoot/iocRotaryEncoder/ioc.log
+
+[Install]
+WantedBy=default.target

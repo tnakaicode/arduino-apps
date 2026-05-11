@@ -92,6 +92,13 @@ record(longin, "$(P)$(R)ARDUINO:LOOP_MS")
     field(EGU, "ms")
 }
 
+record(longin, "$(P)$(R)ARDUINO:LOOP_US")
+{
+    field(DESC, "Arduino loop period microseconds reported by firmware")
+    field(SCAN, "Passive")
+    field(EGU, "us")
+}
+
 record(longin, "$(P)$(R)ARDUINO:UPTIME_MS")
 {
     field(DESC, "Arduino uptime reported by firmware")

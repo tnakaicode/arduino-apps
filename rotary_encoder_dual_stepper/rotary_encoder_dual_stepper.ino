@@ -75,6 +75,8 @@ const unsigned long EPICS_UPDATE_INTERVAL = 10; // 10ms = 100Hz
 // Arduino runtime stats
 unsigned long lastLoopTickMs = 0;
 unsigned long loopPeriodMs = 0;
+unsigned long lastLoopTickUs = 0;
+unsigned long loopPeriodUs = 0;
 unsigned long loopRateWindowStartMs = 0;
 unsigned long loopRateWindowCount = 0;
 long loopRateHz = 0;
@@ -231,11 +233,19 @@ void handleSwitch2()
 void loop()
 {
     unsigned long nowMs = millis();
+    unsigned long nowUs = micros();
+    
     if (lastLoopTickMs > 0)
     {
         loopPeriodMs = nowMs - lastLoopTickMs;
     }
     lastLoopTickMs = nowMs;
+    
+    if (lastLoopTickUs > 0)
+    {
+        loopPeriodUs = nowUs - lastLoopTickUs;
+    }
+    lastLoopTickUs = nowUs;
 
     if (loopRateWindowStartMs == 0)
     {
@@ -275,7 +285,7 @@ void outputEpicsData()
         lastEpicsUpdate = now;
         
         // Format:
-        // ENC1:value,ENC2:value,MTR1:value,MTR2:value,SYNC:value,LOOP_HZ:value,LOOP_MS:value,UPTIME_MS:value
+        // ENC1:value,ENC2:value,MTR1:value,MTR2:value,SYNC:value,LOOP_HZ:value,LOOP_MS:value,LOOP_US:value,UPTIME_MS:value
         Serial.print("ENC1:");
         Serial.print(enc1_clicks);
         Serial.print(",ENC2:");
@@ -290,6 +300,8 @@ void outputEpicsData()
         Serial.print(loopRateHz);
         Serial.print(",LOOP_MS:");
         Serial.print(loopPeriodMs);
+        Serial.print(",LOOP_US:");
+        Serial.print(loopPeriodUs);
         Serial.print(",UPTIME_MS:");
         Serial.println(now);
     }

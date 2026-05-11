@@ -1,0 +1,40 @@
+# EPICS Database file for Rotary Encoder Dual Stepper
+# PV records for encoder positions and motor positions
+# For use with softIoc
+
+record(longin, "$(P)$(R)ENC1:POSITION")
+{
+    field(DESC, "Encoder 1 Position (clicks)")
+    field(SCAN, "Passive")
+    field(EGU, "clicks")
+}
+
+record(longin, "$(P)$(R)ENC2:POSITION")
+{
+    field(DESC, "Encoder 2 Position (clicks)")
+    field(SCAN, "Passive")
+    field(EGU, "clicks")
+}
+
+record(longin, "$(P)$(R)MTR1:POSITION")
+{
+    field(DESC, "Motor 1 Current Position (steps)")
+    field(SCAN, "Passive")
+    field(EGU, "steps")
+}
+
+record(longin, "$(P)$(R)MTR2:POSITION")
+{
+    field(DESC, "Motor 2 Current Position (steps)")
+    field(SCAN, "Passive")
+    field(EGU, "steps")
+}
+
+record(bi, "$(P)$(R)SYNC:MODE")
+{
+    field(DESC, "Synchronization Mode")
+    field(SCAN, "Passive")
+    field(ZNAM, "Motor1 Only")
+    field(ONAM, "Motor1+Motor2 Sync")
+}
+

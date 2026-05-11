@@ -1,4 +1,3 @@
-dbl
 #!../../bin/linux-aarch64/RotaryEncoder
 
 < envPaths
@@ -20,8 +19,6 @@ dbLoadRecords "db/RotaryEncoder.db", "P=$(P),R=$(R)"
 cd "${TOP}/iocBoot/${IOC}"
 
 iocInit
-
-system "./serial_reader.sh $(P)$(R) $(SERIAL_PORT) $(SERIAL_BAUD) &"
 
 
 

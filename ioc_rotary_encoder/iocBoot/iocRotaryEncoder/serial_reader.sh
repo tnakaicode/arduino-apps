@@ -76,23 +76,23 @@ stdbuf -oL cat "$SERIAL_PORT" 2>/dev/null | while IFS= read -r line; do
             case "$key" in
                 ENC1)
                     PV="${PV_PREFIX}ENC1:POSITION"
-                    caput -q "$PV" "$value" 2>/dev/null || log_error "Failed to update $PV"
+                    caput "$PV" "$value" >/dev/null 2>&1 || log_error "Failed to update $PV"
                     ;;
                 ENC2)
                     PV="${PV_PREFIX}ENC2:POSITION"
-                    caput -q "$PV" "$value" 2>/dev/null || log_error "Failed to update $PV"
+                    caput "$PV" "$value" >/dev/null 2>&1 || log_error "Failed to update $PV"
                     ;;
                 MTR1)
                     PV="${PV_PREFIX}MTR1:POSITION"
-                    caput -q "$PV" "$value" 2>/dev/null || log_error "Failed to update $PV"
+                    caput "$PV" "$value" >/dev/null 2>&1 || log_error "Failed to update $PV"
                     ;;
                 MTR2)
                     PV="${PV_PREFIX}MTR2:POSITION"
-                    caput -q "$PV" "$value" 2>/dev/null || log_error "Failed to update $PV"
+                    caput "$PV" "$value" >/dev/null 2>&1 || log_error "Failed to update $PV"
                     ;;
                 SYNC)
                     PV="${PV_PREFIX}SYNC:MODE"
-                    caput -q "$PV" "$value" 2>/dev/null || log_error "Failed to update $PV"
+                    caput "$PV" "$value" >/dev/null 2>&1 || log_error "Failed to update $PV"
                     ;;
                 *)
                     # Unknown key - ignore

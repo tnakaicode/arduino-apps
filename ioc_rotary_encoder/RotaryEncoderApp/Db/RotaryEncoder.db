@@ -1,89 +1,40 @@
 # EPICS Database file for Rotary Encoder Dual Stepper
 # PV records for encoder positions and motor positions
+# For use with softIoc
 
 record(longin, "$(P)$(R)ENC1:POSITION")
 {
     field(DESC, "Encoder 1 Position (clicks)")
-    field(DTYP, "Raw Soft Channel")
-    field(SCAN, "I/O Intr")
+    field(SCAN, "Passive")
     field(EGU, "clicks")
-    field(HOPR, "32767")
-    field(LOPR, "-32768")
 }
 
 record(longin, "$(P)$(R)ENC2:POSITION")
 {
     field(DESC, "Encoder 2 Position (clicks)")
-    field(DTYP, "Raw Soft Channel")
-    field(SCAN, "I/O Intr")
+    field(SCAN, "Passive")
     field(EGU, "clicks")
-    field(HOPR, "32767")
-    field(LOPR, "-32768")
 }
 
 record(longin, "$(P)$(R)MTR1:POSITION")
 {
     field(DESC, "Motor 1 Current Position (steps)")
-    field(DTYP, "Raw Soft Channel")
-    field(SCAN, "I/O Intr")
+    field(SCAN, "Passive")
     field(EGU, "steps")
-    field(HOPR, "2147483647")
-    field(LOPR, "-2147483648")
 }
 
 record(longin, "$(P)$(R)MTR2:POSITION")
 {
     field(DESC, "Motor 2 Current Position (steps)")
-    field(DTYP, "Raw Soft Channel")
-    field(SCAN, "I/O Intr")
+    field(SCAN, "Passive")
     field(EGU, "steps")
-    field(HOPR, "2147483647")
-    field(LOPR, "-2147483648")
-}
-
-record(ai, "$(P)$(R)ENC1:FREQ")
-{
-    field(DESC, "Encoder 1 Frequency (Hz)")
-    field(DTYP, "Raw Soft Channel")
-    field(SCAN, "I/O Intr")
-    field(EGU, "Hz")
-    field(PREC, "2")
-    field(HOPR, "1000")
-    field(LOPR, "0")
-}
-
-record(ai, "$(P)$(R)ENC2:FREQ")
-{
-    field(DESC, "Encoder 2 Frequency (Hz)")
-    field(DTYP, "Raw Soft Channel")
-    field(SCAN, "I/O Intr")
-    field(EGU, "Hz")
-    field(PREC, "2")
-    field(HOPR, "1000")
-    field(LOPR, "0")
 }
 
 record(bi, "$(P)$(R)SYNC:MODE")
 {
-    field(DESC, "Synchronization Mode (Encoder1)")
-    field(DTYP, "Raw Soft Channel")
+    field(DESC, "Synchronization Mode")
+    field(SCAN, "Passive")
     field(ZNAM, "Motor1 Only")
     field(ONAM, "Motor1+Motor2 Sync")
-    field(SCAN, "I/O Intr")
 }
 
-record(stringin, "$(P)$(R)STATUS")
-{
-    field(DESC, "IOC Status Message")
-    field(DTYP, "Raw Soft Channel")
-    field(SCAN, "I/O Intr")
-}
-
-record(ai, "$(P)$(R)UPTIME")
-{
-    field(DESC, "IOC Uptime (seconds)")
-    field(DTYP, "Raw Soft Channel")
-    field(SCAN, "I/O Intr")
-    field(EGU, "sec")
-    field(PREC, "0")
-}

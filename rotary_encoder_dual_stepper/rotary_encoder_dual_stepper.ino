@@ -46,6 +46,10 @@ const long STEP_PER_CLICK = 20;
 long target1 = 0;
 long target2 = 0;
 
+// Encoder click counts (for EPICS PVs)
+int enc1_clicks = 0;
+int enc2_clicks = 0;
+
 // ENC1 SW: syncモード
 // false: enc1はmotor1のみ / true: enc1がmotor1+2を同期駆動
 bool syncMode = false;
@@ -61,6 +65,10 @@ int lastSw2State  = HIGH;
 unsigned long lastSw2ChangeMs = 0;
 
 const unsigned long SW_DEBOUNCE_MS = 30;
+
+// EPICS output timing
+unsigned long lastEpicsUpdate = 0;
+const unsigned long EPICS_UPDATE_INTERVAL = 10; // 10ms = 100Hz
 
 void setup()
 {
@@ -94,11 +102,13 @@ void handleEncoder1()
 
         target1 += delta;
         motor1.moveTo(target1);
+        enc1_clicks += (delta > 0) ? 1 : -1;
 
         if (syncMode)
         {
             target2 += delta;
             motor2.moveTo(target2);
+            enc2_clicks += (delta > 0) ? 1 : -1;
         }
 
         Serial.print("ENC1 delta=");
@@ -129,6 +139,7 @@ void handleEncoder2()
 
         target2 += delta;
         motor2.moveTo(target2);
+        enc2_clicks += (delta > 0) ? 1 : -1;
 
         Serial.print("ENC2 delta=");
         Serial.print(delta);
@@ -203,6 +214,33 @@ void loop()
     // 非ブロッキングで両モーターを追従
     motor1.run();
     motor2.run();
+    
+    // EPICS形式でデータ出力
+    outputEpicsData();
+}
+
+// --- Output EPICS format data ---
+void outputEpicsData()
+{
+    unsigned long now = millis();
+    
+    // Output at regular intervals for EPICS
+    if (now - lastEpicsUpdate >= EPICS_UPDATE_INTERVAL)
+    {
+        lastEpicsUpdate = now;
+        
+        // Format: ENC1:value,ENC2:value,MTR1:value,MTR2:value,SYNC:value
+        Serial.print("ENC1:");
+        Serial.print(enc1_clicks);
+        Serial.print(",ENC2:");
+        Serial.print(enc2_clicks);
+        Serial.print(",MTR1:");
+        Serial.print(motor1.currentPosition());
+        Serial.print(",MTR2:");
+        Serial.print(motor2.currentPosition());
+        Serial.print(",SYNC:");
+        Serial.println(syncMode ? 1 : 0);
+    }
 }
 
 // ライブラリインストール: arduino-cli lib install "AccelStepper"

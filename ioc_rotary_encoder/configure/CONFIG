@@ -1,21 +1,33 @@
-# CONFIG - Build configuration for Rotary Encoder IOC
+# CONFIG - Load build configuration data
 
-# EPICS base directory
-EPICS_BASE=/opt/epics/base
+RULES = $(EPICS_BASE)
 
-# Compiler and tools
-CROSS_COMPILE=
-CC=gcc
-CCC=g++
-LD=ld
-AR=ar
+include $(TOP)/configure/RELEASE
+-include $(TOP)/configure/RELEASE.$(EPICS_HOST_ARCH).Common
 
-# Compiler flags
-CFLAGS=-O2 -Wall
-CCCFLAGS=-O2 -Wall
+ifdef T_A
+	-include $(TOP)/configure/RELEASE.Common.$(T_A)
+	-include $(TOP)/configure/RELEASE.$(EPICS_HOST_ARCH).$(T_A)
+endif
 
-# Link flags
-LDFLAGS=
+ifneq (file,$(origin EPICS_BASE))
+	$(error EPICS_BASE must be set in a configure/RELEASE file)
+else
+	ifeq ($(wildcard $(EPICS_BASE)/configure/CONFIG_BASE),)
+		$(error EPICS_BASE does not point to an EPICS installation)
+	endif
+endif
 
-# Include EPICS base config
-include $(EPICS_BASE)/configure/CONFIG
+CONFIG = $(RULES)/configure
+include $(CONFIG)/CONFIG
+
+INSTALL_LOCATION = $(TOP)
+
+include $(TOP)/configure/CONFIG_SITE
+
+-include $(TOP)/configure/CONFIG_SITE.$(EPICS_HOST_ARCH).Common
+
+ifdef T_A
+ -include $(TOP)/configure/CONFIG_SITE.Common.$(T_A)
+ -include $(TOP)/configure/CONFIG_SITE.$(EPICS_HOST_ARCH).$(T_A)
+endif

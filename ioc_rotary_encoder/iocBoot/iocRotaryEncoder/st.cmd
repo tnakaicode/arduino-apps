@@ -1,36 +1,28 @@
-#!/bin/bash
-# Startup script for Rotary Encoder Dual Stepper IOC
+dbl
+#!../../bin/linux-aarch64/RotaryEncoder
 
-# Get environment paths
-. ./envPaths
+< envPaths
 
-# Set IOC name and prefix
-epicsEnvSet("IOCNAME", "IOC-RotaryEncoder")
+epicsEnvSet("ENGINEER", "rpi")
+epicsEnvSet("IOC", "iocRotaryEncoder")
 epicsEnvSet("P", "RE:")
 epicsEnvSet("R", "ch0:")
+epicsEnvSet("SERIAL_PORT", "/dev/ttyACM0")
+epicsEnvSet("SERIAL_BAUD", "115200")
 
-# Serial port for Arduino communication
-epicsEnvSet("SERIAL_PORT", "/dev/ttyUSB0")
-epicsEnvSet("BAUD_RATE", "115200")
+cd "${TOP}"
 
-# Register all record types
-cd "${TOP}/dbd"
-dbLoadDatabase "RotaryEncoder.dbd"
-RotaryEncoder_registerRecordDeviceSupport
+dbLoadDatabase "dbd/RotaryEncoder.dbd"
+RotaryEncoder_registerRecordDeviceDriver pdbbase
 
-cd "${APPDIR}"
+dbLoadRecords "db/RotaryEncoder.db", "P=$(P),R=$(R)"
 
-# Load the database
-dbLoadRecords "${TOP}/db/RotaryEncoder.db", "P=${P}, R=${R}"
+cd "${TOP}/iocBoot/${IOC}"
 
-# IOC initialization
 iocInit
 
-# Start sequence
-seq "rotaryEncoder", "P=${P}, R=${R}"
+system "./serial_reader.sh $(P)$(R) $(SERIAL_PORT) $(SERIAL_BAUD) &"
 
-# Dbl - list all records
-dbl
 
-# Leave caShell running
-caShell
+
+

@@ -1,0 +1,6 @@
+# CONFIG_SITE
+
+CHECK_RELEASE = YES
+
+-include $(TOP)/../CONFIG_SITE.local
+-include $(TOP)/configure/CONFIG_SITE.local

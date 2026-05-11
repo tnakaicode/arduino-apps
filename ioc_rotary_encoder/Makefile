@@ -1,36 +1,14 @@
-# Top-level Makefile for Rotary Encoder IOC
-
+# Makefile at top of application tree
 TOP = .
-
 include $(TOP)/configure/CONFIG
 
-# Build subdirectories
-DIRS := configure
-DIRS += RotaryEncoderApp
+DIRS += configure
+DIRS += $(wildcard *App)
+DIRS += $(wildcard iocBoot)
 
-# Rules
-.PHONY: all clean
+$(foreach dir, $(filter-out configure, $(DIRS)), \
+    $(eval $(dir)_DEPEND_DIRS += configure))
 
-all:
-	@for dir in $(DIRS); do \
-	    echo "Building $$dir ..."; \
-	    $(MAKE) -C $$dir; \
-	done
+iocBoot_DEPEND_DIRS += $(filter %App,$(DIRS))
 
-clean:
-	@for dir in $(DIRS); do \
-	    echo "Cleaning $$dir ..."; \
-	    $(MAKE) -C $$dir clean; \
-	done
-
-distclean: clean
-	rm -rf O.* bin lib
-
-.PHONY: help
-help:
-	@echo "Rotary Encoder IOC Build System"
-	@echo ""
-	@echo "Targets:"
-	@echo "  make       - Build the IOC"
-	@echo "  make clean - Remove object files"
-	@echo "  make help  - Show this help"
+include $(TOP)/configure/RULES_TOP

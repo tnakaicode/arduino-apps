@@ -1,0 +1,306 @@
+2026-05-11 19:15:16,548 - INFO - Connected to /dev/ttyACM0 at 115200 baud
+2026-05-11 19:15:16,548 - INFO - Starting serial read loop
+2026-05-11 19:15:16,548 - INFO - Rotary Encoder IOC started
+2026-05-11 19:15:16,549 - INFO - PV Prefix: RE:ch0:
+2026-05-11 19:15:16,549 - INFO - Waiting for serial data...
+2026-05-11 19:15:16,549 - INFO - EPICS integration disabled (pyepics not installed)
+2026-05-11 19:15:16,622 - ERROR - Error parsing serial data: too many values to unpack (expected 2)
+2026-05-11 19:15:16,633 - ERROR - Error parsing serial data: too many values to unpack (expected 2)
+2026-05-11 19:15:18,149 - ERROR - Error parsing serial data: too many values to unpack (expected 2)
+2026-05-11 19:15:18,159 - ERROR - Error parsing serial data: too many values to unpack (expected 2)
+2026-05-11 19:15:26,549 - INFO - ==================================================
+2026-05-11 19:15:26,550 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:15:26,550 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:15:26,550 - INFO - Uptime: 10.0s
+2026-05-11 19:15:26,550 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:15:26,550 - INFO - ==================================================
+2026-05-11 19:15:36,550 - INFO - ==================================================
+2026-05-11 19:15:36,550 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:15:36,550 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:15:36,550 - INFO - Uptime: 20.0s
+2026-05-11 19:15:36,550 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:15:36,550 - INFO - ==================================================
+2026-05-11 19:15:46,550 - INFO - ==================================================
+2026-05-11 19:15:46,551 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:15:46,551 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:15:46,551 - INFO - Uptime: 30.0s
+2026-05-11 19:15:46,551 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:15:46,551 - INFO - ==================================================
+2026-05-11 19:15:56,551 - INFO - ==================================================
+2026-05-11 19:15:56,551 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:15:56,551 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:15:56,551 - INFO - Uptime: 40.0s
+2026-05-11 19:15:56,551 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:15:56,552 - INFO - ==================================================
+2026-05-11 19:16:06,249 - ERROR - Error parsing serial data: too many values to unpack (expected 2)
+2026-05-11 19:16:06,552 - INFO - ==================================================
+2026-05-11 19:16:06,552 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:16:06,552 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:16:06,553 - INFO - Uptime: 50.0s
+2026-05-11 19:16:06,553 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:16:06,553 - INFO - ==================================================
+2026-05-11 19:16:16,553 - INFO - ==================================================
+2026-05-11 19:16:16,553 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:16:16,554 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:16:16,554 - INFO - Uptime: 60.0s
+2026-05-11 19:16:16,554 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:16:16,554 - INFO - ==================================================
+2026-05-11 19:16:26,555 - INFO - ==================================================
+2026-05-11 19:16:26,555 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:16:26,555 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:16:26,555 - INFO - Uptime: 70.0s
+2026-05-11 19:16:26,555 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:16:26,555 - INFO - ==================================================
+2026-05-11 19:16:36,556 - INFO - ==================================================
+2026-05-11 19:16:36,556 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:16:36,556 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:16:36,556 - INFO - Uptime: 80.0s
+2026-05-11 19:16:36,556 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:16:36,556 - INFO - ==================================================
+2026-05-11 19:16:46,556 - INFO - ==================================================
+2026-05-11 19:16:46,557 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:16:46,557 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:16:46,557 - INFO - Uptime: 90.0s
+2026-05-11 19:16:46,557 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:16:46,557 - INFO - ==================================================
+2026-05-11 19:16:47,008 - ERROR - Error parsing serial data: too many values to unpack (expected 2)
+2026-05-11 19:16:56,557 - INFO - ==================================================
+2026-05-11 19:16:56,557 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:16:56,557 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:16:56,557 - INFO - Uptime: 100.0s
+2026-05-11 19:16:56,557 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:16:56,557 - INFO - ==================================================
+2026-05-11 19:17:06,557 - INFO - ==================================================
+2026-05-11 19:17:06,557 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:17:06,557 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:17:06,557 - INFO - Uptime: 110.0s
+2026-05-11 19:17:06,557 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:17:06,557 - INFO - ==================================================
+2026-05-11 19:17:06,596 - ERROR - Error parsing serial data: too many values to unpack (expected 2)
+2026-05-11 19:17:16,558 - INFO - ==================================================
+2026-05-11 19:17:16,558 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:17:16,558 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:17:16,558 - INFO - Uptime: 120.0s
+2026-05-11 19:17:16,558 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:17:16,558 - INFO - ==================================================
+2026-05-11 19:17:26,558 - INFO - ==================================================
+2026-05-11 19:17:26,558 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:17:26,559 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:17:26,559 - INFO - Uptime: 130.0s
+2026-05-11 19:17:26,559 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:17:26,559 - INFO - ==================================================
+2026-05-11 19:17:29,788 - ERROR - Error parsing serial data: too many values to unpack (expected 2)
+2026-05-11 19:17:36,559 - INFO - ==================================================
+2026-05-11 19:17:36,559 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:17:36,559 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:17:36,559 - INFO - Uptime: 140.0s
+2026-05-11 19:17:36,560 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:17:36,560 - INFO - ==================================================
+2026-05-11 19:17:41,234 - INFO - Received interrupt signal
+2026-05-11 19:17:41,234 - INFO - Stopping Rotary Encoder IOC
+2026-05-11 19:17:41,237 - INFO - Disconnected from /dev/ttyACM0
+2026-05-11 19:17:49,704 - INFO - Connected to /dev/ttyACM0 at 115200 baud
+2026-05-11 19:17:49,705 - INFO - Starting serial read loop
+2026-05-11 19:17:49,705 - INFO - Rotary Encoder IOC started
+2026-05-11 19:17:49,706 - INFO - PV Prefix: RE:ch0:
+2026-05-11 19:17:49,706 - INFO - Serial Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:17:49,706 - INFO - Waiting for serial data...
+2026-05-11 19:17:49,706 - INFO - EPICS CA Server not available (install pcaspy for full EPICS support)
+2026-05-11 19:17:51,257 - ERROR - Error in serial read loop: invalid literal for int() with base 10: ''
+2026-05-11 19:17:52,268 - ERROR - Error in serial read loop: invalid literal for int() with base 10: 'motor1 (SW: syncモード切替)'
+2026-05-11 19:17:53,269 - ERROR - Error in serial read loop: invalid literal for int() with base 10: 'motor2 (SW: 位置リセット)'
+2026-05-11 19:17:59,707 - INFO - ==================================================
+2026-05-11 19:17:59,707 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:17:59,707 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:17:59,707 - INFO - Uptime: 10.0s
+2026-05-11 19:17:59,707 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:17:59,707 - INFO - PV Values:
+2026-05-11 19:17:59,707 - INFO -   ENC1_POS: 0
+2026-05-11 19:17:59,707 - INFO -   ENC2_POS: 0
+2026-05-11 19:17:59,707 - INFO -   MTR1_POS: 0
+2026-05-11 19:17:59,707 - INFO -   MTR2_POS: 0
+2026-05-11 19:17:59,707 - INFO -   SYNC_MODE: 0
+2026-05-11 19:17:59,707 - INFO -   STATUS: Starting
+2026-05-11 19:17:59,707 - INFO -   UPTIME: 0
+2026-05-11 19:17:59,707 - INFO - ==================================================
+2026-05-11 19:18:09,708 - INFO - ==================================================
+2026-05-11 19:18:09,708 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:18:09,708 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:18:09,708 - INFO - Uptime: 20.0s
+2026-05-11 19:18:09,708 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:18:09,709 - INFO - PV Values:
+2026-05-11 19:18:09,709 - INFO -   ENC1_POS: 0
+2026-05-11 19:18:09,709 - INFO -   ENC2_POS: 0
+2026-05-11 19:18:09,709 - INFO -   MTR1_POS: 0
+2026-05-11 19:18:09,709 - INFO -   MTR2_POS: 0
+2026-05-11 19:18:09,710 - INFO -   SYNC_MODE: 0
+2026-05-11 19:18:09,710 - INFO -   STATUS: Starting
+2026-05-11 19:18:09,710 - INFO -   UPTIME: 0
+2026-05-11 19:18:09,710 - INFO - ==================================================
+2026-05-11 19:18:15,650 - INFO - Received interrupt signal
+2026-05-11 19:18:15,650 - INFO - Stopping Rotary Encoder IOC
+2026-05-11 19:18:15,652 - INFO - Disconnected from /dev/ttyACM0
+2026-05-11 19:18:24,626 - INFO - Connected to /dev/ttyACM0 at 115200 baud
+2026-05-11 19:18:24,626 - INFO - Starting serial read loop
+2026-05-11 19:18:24,627 - INFO - Rotary Encoder IOC started
+2026-05-11 19:18:24,627 - INFO - PV Prefix: RE:ch0:
+2026-05-11 19:18:24,627 - INFO - Serial Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:18:24,627 - INFO - Waiting for serial data...
+2026-05-11 19:18:24,627 - INFO - EPICS CA Server not available (install pcaspy for full EPICS support)
+2026-05-11 19:18:34,627 - INFO - ==================================================
+2026-05-11 19:18:34,627 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:18:34,628 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:18:34,628 - INFO - Uptime: 10.0s
+2026-05-11 19:18:34,628 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:18:34,628 - INFO - PV Values:
+2026-05-11 19:18:34,628 - INFO -   ENC1_POS: 0
+2026-05-11 19:18:34,628 - INFO -   ENC2_POS: 0
+2026-05-11 19:18:34,628 - INFO -   MTR1_POS: 0
+2026-05-11 19:18:34,628 - INFO -   MTR2_POS: 0
+2026-05-11 19:18:34,628 - INFO -   SYNC_MODE: 0
+2026-05-11 19:18:34,628 - INFO -   STATUS: Starting
+2026-05-11 19:18:34,628 - INFO -   UPTIME: 0
+2026-05-11 19:18:34,628 - INFO - ==================================================
+2026-05-11 19:18:44,628 - INFO - ==================================================
+2026-05-11 19:18:44,628 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:18:44,628 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:18:44,628 - INFO - Uptime: 20.0s
+2026-05-11 19:18:44,628 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:18:44,628 - INFO - PV Values:
+2026-05-11 19:18:44,628 - INFO -   ENC1_POS: 0
+2026-05-11 19:18:44,628 - INFO -   ENC2_POS: 0
+2026-05-11 19:18:44,629 - INFO -   MTR1_POS: 0
+2026-05-11 19:18:44,629 - INFO -   MTR2_POS: 0
+2026-05-11 19:18:44,629 - INFO -   SYNC_MODE: 0
+2026-05-11 19:18:44,629 - INFO -   STATUS: Starting
+2026-05-11 19:18:44,629 - INFO -   UPTIME: 0
+2026-05-11 19:18:44,629 - INFO - ==================================================
+2026-05-11 19:18:54,629 - INFO - ==================================================
+2026-05-11 19:18:54,629 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:18:54,629 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:18:54,629 - INFO - Uptime: 30.0s
+2026-05-11 19:18:54,629 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:18:54,629 - INFO - PV Values:
+2026-05-11 19:18:54,629 - INFO -   ENC1_POS: 0
+2026-05-11 19:18:54,629 - INFO -   ENC2_POS: 0
+2026-05-11 19:18:54,629 - INFO -   MTR1_POS: 0
+2026-05-11 19:18:54,629 - INFO -   MTR2_POS: 0
+2026-05-11 19:18:54,629 - INFO -   SYNC_MODE: 0
+2026-05-11 19:18:54,629 - INFO -   STATUS: Starting
+2026-05-11 19:18:54,629 - INFO -   UPTIME: 0
+2026-05-11 19:18:54,629 - INFO - ==================================================
+2026-05-11 19:19:04,630 - INFO - ==================================================
+2026-05-11 19:19:04,630 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:19:04,630 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:19:04,630 - INFO - Uptime: 40.0s
+2026-05-11 19:19:04,630 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:19:04,631 - INFO - PV Values:
+2026-05-11 19:19:04,631 - INFO -   ENC1_POS: 0
+2026-05-11 19:19:04,631 - INFO -   ENC2_POS: 0
+2026-05-11 19:19:04,631 - INFO -   MTR1_POS: 0
+2026-05-11 19:19:04,631 - INFO -   MTR2_POS: 0
+2026-05-11 19:19:04,631 - INFO -   SYNC_MODE: 0
+2026-05-11 19:19:04,631 - INFO -   STATUS: Starting
+2026-05-11 19:19:04,631 - INFO -   UPTIME: 0
+2026-05-11 19:19:04,631 - INFO - ==================================================
+2026-05-11 19:19:14,631 - INFO - ==================================================
+2026-05-11 19:19:14,632 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:19:14,632 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:19:14,632 - INFO - Uptime: 50.0s
+2026-05-11 19:19:14,632 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:19:14,632 - INFO - PV Values:
+2026-05-11 19:19:14,632 - INFO -   ENC1_POS: 0
+2026-05-11 19:19:14,632 - INFO -   ENC2_POS: 0
+2026-05-11 19:19:14,632 - INFO -   MTR1_POS: 0
+2026-05-11 19:19:14,632 - INFO -   MTR2_POS: 0
+2026-05-11 19:19:14,632 - INFO -   SYNC_MODE: 0
+2026-05-11 19:19:14,632 - INFO -   STATUS: Starting
+2026-05-11 19:19:14,632 - INFO -   UPTIME: 0
+2026-05-11 19:19:14,632 - INFO - ==================================================
+2026-05-11 19:19:24,632 - INFO - ==================================================
+2026-05-11 19:19:24,632 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:19:24,633 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:19:24,633 - INFO - Uptime: 60.0s
+2026-05-11 19:19:24,633 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:19:24,633 - INFO - PV Values:
+2026-05-11 19:19:24,633 - INFO -   ENC1_POS: 0
+2026-05-11 19:19:24,633 - INFO -   ENC2_POS: 0
+2026-05-11 19:19:24,633 - INFO -   MTR1_POS: 0
+2026-05-11 19:19:24,633 - INFO -   MTR2_POS: 0
+2026-05-11 19:19:24,633 - INFO -   SYNC_MODE: 0
+2026-05-11 19:19:24,633 - INFO -   STATUS: Starting
+2026-05-11 19:19:24,633 - INFO -   UPTIME: 0
+2026-05-11 19:19:24,633 - INFO - ==================================================
+2026-05-11 19:19:34,633 - INFO - ==================================================
+2026-05-11 19:19:34,633 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:19:34,633 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:19:34,634 - INFO - Uptime: 70.0s
+2026-05-11 19:19:34,634 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:19:34,634 - INFO - PV Values:
+2026-05-11 19:19:34,634 - INFO -   ENC1_POS: 0
+2026-05-11 19:19:34,634 - INFO -   ENC2_POS: 0
+2026-05-11 19:19:34,634 - INFO -   MTR1_POS: 0
+2026-05-11 19:19:34,634 - INFO -   MTR2_POS: 0
+2026-05-11 19:19:34,634 - INFO -   SYNC_MODE: 0
+2026-05-11 19:19:34,634 - INFO -   STATUS: Starting
+2026-05-11 19:19:34,634 - INFO -   UPTIME: 0
+2026-05-11 19:19:34,634 - INFO - ==================================================
+2026-05-11 19:19:44,634 - INFO - ==================================================
+2026-05-11 19:19:44,634 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:19:44,635 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:19:44,635 - INFO - Uptime: 80.0s
+2026-05-11 19:19:44,635 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:19:44,635 - INFO - PV Values:
+2026-05-11 19:19:44,635 - INFO -   ENC1_POS: 0
+2026-05-11 19:19:44,635 - INFO -   ENC2_POS: 0
+2026-05-11 19:19:44,635 - INFO -   MTR1_POS: 0
+2026-05-11 19:19:44,635 - INFO -   MTR2_POS: 0
+2026-05-11 19:19:44,635 - INFO -   SYNC_MODE: 0
+2026-05-11 19:19:44,635 - INFO -   STATUS: Starting
+2026-05-11 19:19:44,635 - INFO -   UPTIME: 0
+2026-05-11 19:19:44,635 - INFO - ==================================================
+2026-05-11 19:19:54,635 - INFO - ==================================================
+2026-05-11 19:19:54,635 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:19:54,635 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:19:54,635 - INFO - Uptime: 90.0s
+2026-05-11 19:19:54,635 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:19:54,635 - INFO - PV Values:
+2026-05-11 19:19:54,635 - INFO -   ENC1_POS: 0
+2026-05-11 19:19:54,635 - INFO -   ENC2_POS: 0
+2026-05-11 19:19:54,635 - INFO -   MTR1_POS: 0
+2026-05-11 19:19:54,636 - INFO -   MTR2_POS: 0
+2026-05-11 19:19:54,636 - INFO -   SYNC_MODE: 0
+2026-05-11 19:19:54,636 - INFO -   STATUS: Starting
+2026-05-11 19:19:54,636 - INFO -   UPTIME: 0
+2026-05-11 19:19:54,636 - INFO - ==================================================
+2026-05-11 19:20:04,636 - INFO - ==================================================
+2026-05-11 19:20:04,636 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:20:04,636 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:20:04,636 - INFO - Uptime: 100.0s
+2026-05-11 19:20:04,636 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:20:04,636 - INFO - PV Values:
+2026-05-11 19:20:04,636 - INFO -   ENC1_POS: 0
+2026-05-11 19:20:04,636 - INFO -   ENC2_POS: 0
+2026-05-11 19:20:04,636 - INFO -   MTR1_POS: 0
+2026-05-11 19:20:04,636 - INFO -   MTR2_POS: 0
+2026-05-11 19:20:04,636 - INFO -   SYNC_MODE: 0
+2026-05-11 19:20:04,636 - INFO -   STATUS: Starting
+2026-05-11 19:20:04,636 - INFO -   UPTIME: 0
+2026-05-11 19:20:04,636 - INFO - ==================================================
+2026-05-11 19:20:14,636 - INFO - ==================================================
+2026-05-11 19:20:14,637 - INFO - Rotary Encoder IOC Status
+2026-05-11 19:20:14,637 - INFO - Port: /dev/ttyACM0 @ 115200 baud
+2026-05-11 19:20:14,637 - INFO - Uptime: 110.0s
+2026-05-11 19:20:14,637 - INFO - Last data: {'ENC1': 0, 'ENC2': 0, 'MTR1': 0, 'MTR2': 0, 'SYNC': 0}
+2026-05-11 19:20:14,637 - INFO - PV Values:
+2026-05-11 19:20:14,637 - INFO -   ENC1_POS: 0
+2026-05-11 19:20:14,637 - INFO -   ENC2_POS: 0
+2026-05-11 19:20:14,637 - INFO -   MTR1_POS: 0
+2026-05-11 19:20:14,637 - INFO -   MTR2_POS: 0
+2026-05-11 19:20:14,637 - INFO -   SYNC_MODE: 0
+2026-05-11 19:20:14,637 - INFO -   STATUS: Starting
+2026-05-11 19:20:14,637 - INFO -   UPTIME: 0
+2026-05-11 19:20:14,637 - INFO - ==================================================
+2026-05-11 19:20:16,627 - INFO - Received interrupt signal
+2026-05-11 19:20:16,628 - INFO - Stopping Rotary Encoder IOC
+2026-05-11 19:20:16,632 - INFO - Disconnected from /dev/ttyACM0

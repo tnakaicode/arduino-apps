@@ -14,6 +14,7 @@ from datetime import datetime
 def monitor_serial(port='/dev/ttyUSB0', baudrate=115200, log_file=None):
     """Monitor and display serial data"""
     
+    ser = None
     try:
         ser = serial.Serial(port, baudrate, timeout=1)
         print(f"Connected to {port} at {baudrate} baud")

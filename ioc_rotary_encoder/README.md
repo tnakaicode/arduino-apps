@@ -139,3 +139,37 @@ camonitor RE:ch0:ENC1:POSITION RE:ch0:ENC2:POSITION RE:ch0:MTR1:POSITION RE:ch0:
 - [EPICS Documentation](https://epics-controls.org/)
 - [EPICS Database Reference](https://epics.anl.gov/base/R3-15/8-docs/DBD.html)
 - [Arduino AccelStepper Library](http://www.airspayce.com/mikem/arduino/AccelStepper/)
+
+```bash
+mkdir -p /home/rpi/.config/systemd/user
+cat > /home/rpi/.config/systemd/user/rotary-ioc.service <<'EOF'
+[Unit]
+Description=Rotary Encoder EPICS IOC
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/rpi/arduino-apps/ioc_rotary_encoder/iocBoot/iocRotaryEncoder
+ExecStart=/bin/bash -lc 'exec ./st.cmd'
+Restart=always
+RestartSec=2
+StandardOutput=append:/home/rpi/arduino-apps/ioc_rotary_encoder/iocBoot/iocRotaryEncoder/ioc.log
+StandardError=append:/home/rpi/arduino-apps/ioc_rotary_encoder/iocBoot/iocRotaryEncoder/ioc.log
+
+[Install]
+WantedBy=default.target
+EOF
+systemctl --user daemon-reload
+systemctl --user enable rotary-ioc.service
+systemctl --user restart rotary-ioc.service
+systemctl --user status rotary-ioc.service --no-pager -n 20
+
+
+loginctl show-user rpi -p Linger
+
+
+
+systemctl --user is-enabled rotary-ioc.service; systemctl --user is-active rotary-ioc.service
+
+
+```

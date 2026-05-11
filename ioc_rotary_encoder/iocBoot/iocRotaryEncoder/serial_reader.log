@@ -21,3 +21,35 @@
 [2026-05-11 19:36:52] INFO: Raw: ENC1:0,ENC2:0,MTR1:0,MTR2:0,SYNC:0
 [2026-05-11 19:36:52] INFO: Raw: ENC1:0,ENC2:0,MTR1:0,MTR2:0,SYNC:0
 [2026-05-11 19:36:52] INFO: Raw: ENC1:0,ENC2:0,MTR1:0,MTR2:0,SYNC:0
+[2026-05-11 19:40:53] INFO: Starting Serial Reader
+[2026-05-11 19:40:53] INFO: PV Prefix: RE:ch0:
+[2026-05-11 19:40:53] INFO: Serial Port: /dev/ttyACM0 @ 115200 baud
+[2026-05-11 19:41:44] INFO: Starting Serial Reader
+[2026-05-11 19:41:44] INFO: PV Prefix: RE:ch0:
+[2026-05-11 19:41:44] INFO: Serial Port: /dev/ttyACM0 @ 115200 baud
+[2026-05-11 19:41:44] INFO: Raw: ENC1: motor1 (SW: syncモード切替)
+[2026-05-11 19:43:43] INFO: Starting Serial Reader
+[2026-05-11 19:43:43] INFO: PV Prefix: RE:ch0:
+[2026-05-11 19:43:43] INFO: Serial Port: /dev/ttyACM0 @ 115200 baud
+[2026-05-11 19:44:41] INFO: Starting Serial Reader
+[2026-05-11 19:44:41] INFO: PV Prefix: RE:ch0:
+[2026-05-11 19:44:41] INFO: Serial Port: /dev/ttyACM0 @ 115200 baud
+[2026-05-11 19:45:44] INFO: Starting Serial Reader
+[2026-05-11 19:45:44] INFO: PV Prefix: RE:ch0:
+[2026-05-11 19:45:44] INFO: Serial Port: /dev/ttyACM0 @ 115200 baud
+[2026-05-11 19:51:43] INFO: Starting Serial Reader: prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+[2026-05-11 19:51:43] INFO: Serial port open and configured (fd=3)
+[2026-05-11 19:52:08] INFO: Starting Serial Reader: prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+[2026-05-11 19:52:08] INFO: Serial port open and configured (fd=3)
+[2026-05-11 19:54:28] INFO: Starting Serial Reader: prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+[2026-05-11 19:54:28] INFO: Serial port open and configured (fd=3)
+[2026-05-11 19:55:44] INFO: Starting Serial Reader: prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+[2026-05-11 19:55:44] INFO: Serial port open and configured (fd=3)
+[2026-05-11 20:05:33] INFO: Starting Serial Reader: prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+[2026-05-11 20:05:33] INFO: Serial port open and configured (fd=3)
+[2026-05-11 20:05:36] INFO: Starting Serial Reader: prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+[2026-05-11 20:05:36] INFO: Serial port open and configured (fd=3)
+[2026-05-11 20:05:52] INFO: Starting Serial Reader: prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+[2026-05-11 20:05:52] INFO: Serial port open and configured (fd=3)
+[2026-05-11 20:15:18] INFO: Starting Serial Reader: prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+[2026-05-11 20:15:18] INFO: Serial port open and configured (fd=3)

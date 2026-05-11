@@ -20,6 +20,8 @@ cd "${TOP}/iocBoot/${IOC}"
 
 iocInit
 
+rotaryStartSerialReader("$(P)$(R)", "$(SERIAL_PORT)", "$(SERIAL_BAUD)")
+
 
 
 

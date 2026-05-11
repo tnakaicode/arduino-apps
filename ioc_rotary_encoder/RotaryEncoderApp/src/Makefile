@@ -8,8 +8,10 @@ PROD_IOC = RotaryEncoder
 
 DBD += RotaryEncoder.dbd
 RotaryEncoder_DBD += base.dbd
+RotaryEncoder_DBD += RotaryEncoderSupport.dbd
 
 RotaryEncoder_SRCS += RotaryEncoder_registerRecordDeviceDriver.cpp
+RotaryEncoder_SRCS += RotaryEncoderSupport.cpp
 RotaryEncoder_SRCS_DEFAULT += RotaryEncoderMain.cpp
 RotaryEncoder_SRCS_vxWorks += -nil-
 

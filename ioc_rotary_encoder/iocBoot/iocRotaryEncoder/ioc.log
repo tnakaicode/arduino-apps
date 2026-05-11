@@ -114,3 +114,8 @@ rotarySerial: serial open/configured (/dev/ttyACM0)
 [1mrotaryStartSerialReader("RE:ch0:", "/dev/ttyACM0", "115200")[0m
 [32;1mepics> [0mOut of memory!
 cat: write error: Broken pipe
+Starting iocInit
+iocRun: All initialization complete
+rotaryStartSerialReader: started serial reader thread prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+rotarySerial: thread started prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+rotarySerial: serial open/configured (/dev/ttyACM0)

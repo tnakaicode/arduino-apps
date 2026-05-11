@@ -12,6 +12,9 @@ int main(int argc, char *argv[])
     if (argc >= 2) {
         iocsh(argv[1]);
         epicsThreadSleep(0.2);
+        while (1) {
+            epicsThreadSleep(3600.0);
+        }
     }
     iocsh(NULL);
     epicsExit(0);

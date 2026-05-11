@@ -39,6 +39,8 @@ const int M2_B_MINUS = 7; // Yellow
 AccelStepper motor1(AccelStepper::FULL4WIRE, M1_A_PLUS, M1_A_MINUS, M1_B_PLUS, M1_B_MINUS);
 AccelStepper motor2(AccelStepper::FULL4WIRE, M2_A_PLUS, M2_A_MINUS, M2_B_PLUS, M2_B_MINUS);
 
+const bool DEBUG_SERIAL = false;
+
 // 1ノッチで動かすステップ数
 const long STEP_PER_CLICK = 20;
 
@@ -70,6 +72,13 @@ const unsigned long SW_DEBOUNCE_MS = 30;
 unsigned long lastEpicsUpdate = 0;
 const unsigned long EPICS_UPDATE_INTERVAL = 10; // 10ms = 100Hz
 
+// Arduino runtime stats
+unsigned long lastLoopTickMs = 0;
+unsigned long loopPeriodMs = 0;
+unsigned long loopRateWindowStartMs = 0;
+unsigned long loopRateWindowCount = 0;
+long loopRateHz = 0;
+
 void setup()
 {
     pinMode(ENC1_SW_PIN,  INPUT_PULLUP);
@@ -85,9 +94,12 @@ void setup()
     motor2.setAcceleration(1200);
 
     Serial.begin(115200);
-    Serial.println("Dual bipolar stepper + dual rotary encoder start");
-    Serial.println("ENC1: motor1 (SW: syncモード切替)");
-    Serial.println("ENC2: motor2 (SW: 位置リセット)");
+    if (DEBUG_SERIAL)
+    {
+        Serial.println("Dual bipolar stepper + dual rotary encoder start");
+        Serial.println("ENC1: motor1 (SW: sync mode toggle)");
+        Serial.println("ENC2: motor2 (SW: reset)");
+    }
 }
 
 // --- Encoder1: motor1 操作（syncMode時はmotor2も追従） ---
@@ -111,17 +123,20 @@ void handleEncoder1()
             enc2_clicks += (delta > 0) ? 1 : -1;
         }
 
-        Serial.print("ENC1 delta=");
-        Serial.print(delta);
-        Serial.print(" target1=");
-        Serial.print(target1);
-        if (syncMode)
+        if (DEBUG_SERIAL)
         {
-            Serial.print(" target2=");
-            Serial.print(target2);
-            Serial.print(" (sync)");
+            Serial.print("ENC1 delta=");
+            Serial.print(delta);
+            Serial.print(" target1=");
+            Serial.print(target1);
+            if (syncMode)
+            {
+                Serial.print(" target2=");
+                Serial.print(target2);
+                Serial.print(" (sync)");
+            }
+            Serial.println();
         }
-        Serial.println();
     }
 
     lastClk1State = clkState;
@@ -141,10 +156,13 @@ void handleEncoder2()
         motor2.moveTo(target2);
         enc2_clicks += (delta > 0) ? 1 : -1;
 
-        Serial.print("ENC2 delta=");
-        Serial.print(delta);
-        Serial.print(" target2=");
-        Serial.println(target2);
+        if (DEBUG_SERIAL)
+        {
+            Serial.print("ENC2 delta=");
+            Serial.print(delta);
+            Serial.print(" target2=");
+            Serial.println(target2);
+        }
     }
 
     lastClk2State = clkState;
@@ -165,8 +183,11 @@ void handleSwitch1()
     if ((now - lastSw1ChangeMs) > SW_DEBOUNCE_MS && swState == LOW)
     {
         syncMode = !syncMode;
-        Serial.print("syncMode=");
-        Serial.println(syncMode ? "ON" : "OFF");
+        if (DEBUG_SERIAL)
+        {
+            Serial.print("syncMode=");
+            Serial.println(syncMode ? "ON" : "OFF");
+        }
 
         while (digitalRead(ENC1_SW_PIN) == LOW)
         {
@@ -194,7 +215,10 @@ void handleSwitch2()
         target2 = 0;
         motor1.moveTo(0);
         motor2.moveTo(0);
-        Serial.println("RESET: target1=0 target2=0");
+        if (DEBUG_SERIAL)
+        {
+            Serial.println("RESET: target1=0 target2=0");
+        }
 
         while (digitalRead(ENC2_SW_PIN) == LOW)
         {
@@ -206,6 +230,27 @@ void handleSwitch2()
 
 void loop()
 {
+    unsigned long nowMs = millis();
+    if (lastLoopTickMs > 0)
+    {
+        loopPeriodMs = nowMs - lastLoopTickMs;
+    }
+    lastLoopTickMs = nowMs;
+
+    if (loopRateWindowStartMs == 0)
+    {
+        loopRateWindowStartMs = nowMs;
+    }
+    loopRateWindowCount++;
+
+    unsigned long rateDtMs = nowMs - loopRateWindowStartMs;
+    if (rateDtMs >= 1000)
+    {
+        loopRateHz = (long)((1000.0 * (double)loopRateWindowCount / (double)rateDtMs) + 0.5);
+        loopRateWindowCount = 0;
+        loopRateWindowStartMs = nowMs;
+    }
+
     handleEncoder1();
     handleEncoder2();
     handleSwitch1();
@@ -229,7 +274,8 @@ void outputEpicsData()
     {
         lastEpicsUpdate = now;
         
-        // Format: ENC1:value,ENC2:value,MTR1:value,MTR2:value,SYNC:value
+        // Format:
+        // ENC1:value,ENC2:value,MTR1:value,MTR2:value,SYNC:value,LOOP_HZ:value,LOOP_MS:value,UPTIME_MS:value
         Serial.print("ENC1:");
         Serial.print(enc1_clicks);
         Serial.print(",ENC2:");
@@ -239,7 +285,13 @@ void outputEpicsData()
         Serial.print(",MTR2:");
         Serial.print(motor2.currentPosition());
         Serial.print(",SYNC:");
-        Serial.println(syncMode ? 1 : 0);
+        Serial.print(syncMode ? 1 : 0);
+        Serial.print(",LOOP_HZ:");
+        Serial.print(loopRateHz);
+        Serial.print(",LOOP_MS:");
+        Serial.print(loopPeriodMs);
+        Serial.print(",UPTIME_MS:");
+        Serial.println(now);
     }
 }
 

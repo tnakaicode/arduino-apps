@@ -1,2 +1,29 @@
 [ WARN:0@0.504] global cap.cpp:215 open VIDEOIO(V4L2): backend is generally available but can't be used to capture by name
 [video4linux2,v4l2 @ 0x29398520] ioctl(VIDIOC_G_INPUT): Inappropriate ioctl for device
+Error handling request from 192.168.3.95
+Traceback (most recent call last):
+  File "/usr/lib/python3.11/asyncio/selector_events.py", line 995, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 113] No route to host
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/rpi/.local/lib/python3.11/site-packages/aiohttp/web_protocol.py", line 517, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/.local/lib/python3.11/site-packages/aiohttp/web_app.py", line 569, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/rpi_camera/camera_remote_web.py", line 1157, in stream
+    await response.write(encoded.tobytes())
+  File "/home/rpi/.local/lib/python3.11/site-packages/aiohttp/web_response.py", line 560, in write
+    await self._payload_writer.write(data)
+  File "/home/rpi/.local/lib/python3.11/site-packages/aiohttp/http_writer.py", line 208, in write
+    await self.drain()
+  File "/home/rpi/.local/lib/python3.11/site-packages/aiohttp/http_writer.py", line 351, in drain
+    await protocol._drain_helper()
+  File "/home/rpi/.local/lib/python3.11/site-packages/aiohttp/base_protocol.py", line 100, in _drain_helper
+    await asyncio.shield(waiter)
+ConnectionError: Connection lost

@@ -119,3 +119,19 @@ iocRun: All initialization complete
 rotaryStartSerialReader: started serial reader thread prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
 rotarySerial: thread started prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
 rotarySerial: serial open/configured (/dev/ttyACM0)
+Starting iocInit
+iocRun: All initialization complete
+rotaryStartSerialReader: started serial reader thread prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+rotarySerial: thread started prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+rotarySerial: serial open/configured (/dev/ttyACM0)
+Starting iocInit
+Warning: RSRV has empty beacon address list
+iocRun: All initialization complete
+rotaryStartSerialReader: started serial reader thread prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+rotarySerial: thread started prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+rotarySerial: serial open/configured (/dev/ttyACM0)
+Starting iocInit
+iocRun: All initialization complete
+rotaryStartSerialReader: started serial reader thread prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+rotarySerial: thread started prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+rotarySerial: serial open/configured (/dev/ttyACM0)

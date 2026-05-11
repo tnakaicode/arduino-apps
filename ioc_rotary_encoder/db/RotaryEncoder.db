@@ -38,3 +38,64 @@ record(bi, "$(P)$(R)SYNC:MODE")
     field(ONAM, "Motor1+Motor2 Sync")
 }
 
+record(bi, "$(P)$(R)ARDUINO:CONNECTED")
+{
+    field(DESC, "Arduino serial connection state")
+    field(SCAN, "Passive")
+    field(ZNAM, "Disconnected")
+    field(ONAM, "Connected")
+}
+
+record(longin, "$(P)$(R)ARDUINO:LINES_PER_SEC")
+{
+    field(DESC, "Arduino frame rate")
+    field(SCAN, "Passive")
+    field(EGU, "lines/s")
+}
+
+record(longin, "$(P)$(R)ARDUINO:PARSE_OK")
+{
+    field(DESC, "Parsed frame count")
+    field(SCAN, "Passive")
+}
+
+record(longin, "$(P)$(R)ARDUINO:PARSE_ERR")
+{
+    field(DESC, "Parse error frame count")
+    field(SCAN, "Passive")
+}
+
+record(longin, "$(P)$(R)ARDUINO:RECONNECTS")
+{
+    field(DESC, "Serial reconnect count")
+    field(SCAN, "Passive")
+}
+
+record(longin, "$(P)$(R)ARDUINO:LAST_RX_MS")
+{
+    field(DESC, "Elapsed ms since last received frame")
+    field(SCAN, "Passive")
+    field(EGU, "ms")
+}
+
+record(longin, "$(P)$(R)ARDUINO:LOOP_HZ")
+{
+    field(DESC, "Arduino loop rate reported by firmware")
+    field(SCAN, "Passive")
+    field(EGU, "Hz")
+}
+
+record(longin, "$(P)$(R)ARDUINO:LOOP_MS")
+{
+    field(DESC, "Arduino loop period reported by firmware")
+    field(SCAN, "Passive")
+    field(EGU, "ms")
+}
+
+record(longin, "$(P)$(R)ARDUINO:UPTIME_MS")
+{
+    field(DESC, "Arduino uptime reported by firmware")
+    field(SCAN, "Passive")
+    field(EGU, "ms")
+}
+

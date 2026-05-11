@@ -1,0 +1,21 @@
+# CONFIG - Build configuration for Rotary Encoder IOC
+
+# EPICS base directory
+EPICS_BASE=/opt/epics/base
+
+# Compiler and tools
+CROSS_COMPILE=
+CC=gcc
+CCC=g++
+LD=ld
+AR=ar
+
+# Compiler flags
+CFLAGS=-O2 -Wall
+CCCFLAGS=-O2 -Wall
+
+# Link flags
+LDFLAGS=
+
+# Include EPICS base config
+include $(EPICS_BASE)/configure/CONFIG

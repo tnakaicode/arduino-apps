@@ -1,2 +1,2 @@
-[ WARN:0@0.650] global cap.cpp:215 open VIDEOIO(V4L2): backend is generally available but can't be used to capture by name
-[video4linux2,v4l2 @ 0x10b29850] ioctl(VIDIOC_G_INPUT): Inappropriate ioctl for device
+[ WARN:0@0.504] global cap.cpp:215 open VIDEOIO(V4L2): backend is generally available but can't be used to capture by name
+[video4linux2,v4l2 @ 0x29398520] ioctl(VIDIOC_G_INPUT): Inappropriate ioctl for device

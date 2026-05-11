@@ -1,0 +1,13 @@
+# RotaryEncoder.dbd - Record database definition file
+
+# Include EPICS base definitions
+include "base.dbd"
+
+# Device support
+device(longin, INST_IO, devLiSoftCallback, "Soft Channel")
+device(ai, INST_IO, devAiSoftCallback, "Soft Channel")
+device(bi, INST_IO, devBiSoftCallback, "Soft Channel")
+device(stringin, INST_IO, devSiSoftCallback, "Soft Channel")
+
+# Sequences
+registrar("rotaryEncoderRegistrar")

@@ -30,6 +30,20 @@ record(longin, "$(P)$(R)MTR2:POSITION")
     field(EGU, "steps")
 }
 
+record(longout, "$(P)$(R)MTR1:SETPOINT")
+{
+    field(DESC, "Motor 1 target position from EPICS")
+    field(VAL, "0")
+    field(EGU, "steps")
+}
+
+record(longout, "$(P)$(R)MTR2:SETPOINT")
+{
+    field(DESC, "Motor 2 target position from EPICS")
+    field(VAL, "0")
+    field(EGU, "steps")
+}
+
 record(bi, "$(P)$(R)SYNC:MODE")
 {
     field(DESC, "Synchronization Mode")
@@ -94,7 +108,7 @@ record(longin, "$(P)$(R)ARDUINO:LOOP_MS")
 
 record(longin, "$(P)$(R)ARDUINO:LOOP_US")
 {
-    field(DESC, "Arduino loop period microseconds reported by firmware")
+    field(DESC, "Arduino loop period us")
     field(SCAN, "Passive")
     field(EGU, "us")
 }

@@ -41,6 +41,8 @@ AccelStepper motor2(AccelStepper::FULL4WIRE, M2_A_PLUS, M2_A_MINUS, M2_B_PLUS, M
 
 const bool DEBUG_SERIAL = false;
 
+const long SERIAL_CMD_MAX_ABS = 200000;
+
 // 1ノッチで動かすステップ数
 const long STEP_PER_CLICK = 20;
 
@@ -81,6 +83,84 @@ unsigned long loopRateWindowStartMs = 0;
 unsigned long loopRateWindowCount = 0;
 long loopRateHz = 0;
 
+String serialCmdBuf;
+
+long clampTarget(long value)
+{
+    if (value > SERIAL_CMD_MAX_ABS)
+    {
+        return SERIAL_CMD_MAX_ABS;
+    }
+    if (value < -SERIAL_CMD_MAX_ABS)
+    {
+        return -SERIAL_CMD_MAX_ABS;
+    }
+    return value;
+}
+
+void applyMotorTarget(int motorIndex, long value)
+{
+    long clamped = clampTarget(value);
+    if (motorIndex == 1)
+    {
+        target1 = clamped;
+        motor1.moveTo(target1);
+    }
+    else if (motorIndex == 2)
+    {
+        target2 = clamped;
+        motor2.moveTo(target2);
+    }
+}
+
+void handleSerialCommand(const String& cmd)
+{
+    if (cmd.length() == 0)
+    {
+        return;
+    }
+
+    const char *prefix1 = "SET:MTR1:";
+    const char *prefix2 = "SET:MTR2:";
+
+    if (cmd.startsWith(prefix1))
+    {
+        long value = cmd.substring(strlen(prefix1)).toInt();
+        applyMotorTarget(1, value);
+        return;
+    }
+
+    if (cmd.startsWith(prefix2))
+    {
+        long value = cmd.substring(strlen(prefix2)).toInt();
+        applyMotorTarget(2, value);
+        return;
+    }
+}
+
+void pollSerialCommands()
+{
+    while (Serial.available() > 0)
+    {
+        char ch = (char)Serial.read();
+        if (ch == '\r')
+        {
+            continue;
+        }
+        if (ch == '\n')
+        {
+            handleSerialCommand(serialCmdBuf);
+            serialCmdBuf = "";
+            continue;
+        }
+
+        if (serialCmdBuf.length() < 80)
+        {
+            serialCmdBuf += ch;
+        }
+    }
+}
+
 void setup()
 {
     pinMode(ENC1_SW_PIN,  INPUT_PULLUP);
@@ -104,7 +184,7 @@ void setup()
     }
 }
 
-// --- Encoder1: motor1 操作（syncMode時はmotor2も追従） ---
+// --- Encoder1: monitor only (no motor control) ---
 void handleEncoder1()
 {
     int clkState = digitalRead(ENC1_CLK_PIN);
@@ -112,31 +192,13 @@ void handleEncoder1()
     if (lastClk1State == HIGH && clkState == LOW)
     {
         int dtState = digitalRead(ENC1_DT_PIN);
-        long delta = (dtState != clkState) ? STEP_PER_CLICK : -STEP_PER_CLICK;
-
-        target1 += delta;
-        motor1.moveTo(target1);
+        long delta = (dtState != clkState) ? 1 : -1;
         enc1_clicks += (delta > 0) ? 1 : -1;
-
-        if (syncMode)
-        {
-            target2 += delta;
-            motor2.moveTo(target2);
-            enc2_clicks += (delta > 0) ? 1 : -1;
-        }
 
         if (DEBUG_SERIAL)
         {
             Serial.print("ENC1 delta=");
             Serial.print(delta);
-            Serial.print(" target1=");
-            Serial.print(target1);
-            if (syncMode)
-            {
-                Serial.print(" target2=");
-                Serial.print(target2);
-                Serial.print(" (sync)");
-            }
             Serial.println();
         }
     }
@@ -144,7 +206,7 @@ void handleEncoder1()
     lastClk1State = clkState;
 }
 
-// --- Encoder2: motor2 独立操作 ---
+// --- Encoder2: monitor only (no motor control) ---
 void handleEncoder2()
 {
     int clkState = digitalRead(ENC2_CLK_PIN);
@@ -152,18 +214,14 @@ void handleEncoder2()
     if (lastClk2State == HIGH && clkState == LOW)
     {
         int dtState = digitalRead(ENC2_DT_PIN);
-        long delta = (dtState != clkState) ? STEP_PER_CLICK : -STEP_PER_CLICK;
-
-        target2 += delta;
-        motor2.moveTo(target2);
+        long delta = (dtState != clkState) ? 1 : -1;
         enc2_clicks += (delta > 0) ? 1 : -1;
 
         if (DEBUG_SERIAL)
         {
             Serial.print("ENC2 delta=");
             Serial.print(delta);
-            Serial.print(" target2=");
-            Serial.println(target2);
+            Serial.println();
         }
     }
 
@@ -199,7 +257,7 @@ void handleSwitch1()
     }
 }
 
-// --- SW2: 位置リセット ---
+// --- SW2: monitor reset (encoder counters only) ---
 void handleSwitch2()
 {
     int swState = digitalRead(ENC2_SW_PIN);
@@ -213,13 +271,11 @@ void handleSwitch2()
 
     if ((now - lastSw2ChangeMs) > SW_DEBOUNCE_MS && swState == LOW)
     {
-        target1 = 0;
-        target2 = 0;
-        motor1.moveTo(0);
-        motor2.moveTo(0);
+        enc1_clicks = 0;
+        enc2_clicks = 0;
         if (DEBUG_SERIAL)
         {
-            Serial.println("RESET: target1=0 target2=0");
+            Serial.println("RESET: enc1=0 enc2=0");
         }
 
         while (digitalRead(ENC2_SW_PIN) == LOW)
@@ -260,6 +316,8 @@ void loop()
         loopRateWindowCount = 0;
         loopRateWindowStartMs = nowMs;
     }
+
+    pollSerialCommands();
 
     handleEncoder1();
     handleEncoder2();

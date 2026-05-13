@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include <string>
+#include <sstream>
 
 #include "dbAccess.h"
 #include "epicsExit.h"
@@ -14,6 +15,7 @@
 #include "epicsMutex.h"
 #include "epicsThread.h"
 #include "epicsTime.h"
+#include "epicsTypes.h"
 #include "errlog.h"
 #include "iocsh.h"
 
@@ -87,12 +89,47 @@ bool putLongPV(const std::string& pvName, long value)
         return false;
     }
 
+    epicsInt32 v = static_cast<epicsInt32>(value);
     long nRequest = 1;
-    if (dbPutField(&addr, DBR_LONG, &value, nRequest) != 0) {
+    if (dbPutField(&addr, DBR_LONG, &v, nRequest) != 0) {
         errlogPrintf("rotarySerial: dbPutField failed: %s\n", pvName.c_str());
         return false;
     }
 
+    return true;
+}
+
+bool getLongPV(const std::string& pvName, long *value)
+{
+    DBADDR addr;
+    if (dbNameToAddr(pvName.c_str(), &addr) != 0) {
+        errlogPrintf("rotarySerial: PV not found: %s\n", pvName.c_str());
+        return false;
+    }
+
+    dbScanLock(addr.precord);
+    epicsInt32 v = *static_cast<epicsInt32 *>(addr.pfield);
+    dbScanUnlock(addr.precord);
+    *value = static_cast<long>(v);
+
+    return true;
+}
+
+bool writeSerialLine(int fd, const std::string& line)
+{
+    const char *ptr = line.c_str();
+    size_t remaining = line.size();
+    while (remaining > 0) {
+        ssize_t n = write(fd, ptr, remaining);
+        if (n < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            return false;
+        }
+        ptr += n;
+        remaining -= static_cast<size_t>(n);
+    }
     return true;
 }
 
@@ -146,6 +183,8 @@ void serialReaderThread(void *arg)
     const std::string mtr1Pv = cfg->pvPrefix + "MTR1:POSITION";
     const std::string mtr2Pv = cfg->pvPrefix + "MTR2:POSITION";
     const std::string syncPv = cfg->pvPrefix + "SYNC:MODE";
+    const std::string mtr1SetPv = cfg->pvPrefix + "MTR1:SETPOINT";
+    const std::string mtr2SetPv = cfg->pvPrefix + "MTR2:SETPOINT";
     const std::string connectedPv = cfg->pvPrefix + "ARDUINO:CONNECTED";
     const std::string linesPerSecPv = cfg->pvPrefix + "ARDUINO:LINES_PER_SEC";
     const std::string parseOkPv = cfg->pvPrefix + "ARDUINO:PARSE_OK";
@@ -164,6 +203,8 @@ void serialReaderThread(void *arg)
     long parseErr = 0;
     long reconnects = 0;
     long linesWindow = 0;
+    long lastCmdMtr1 = 0;
+    long lastCmdMtr2 = 0;
     epicsTimeStamp lastRateUpdate;
     epicsTimeStamp lastRxTime;
     epicsTimeGetCurrent(&lastRateUpdate);
@@ -179,6 +220,8 @@ void serialReaderThread(void *arg)
     putLongPV(loopMsPv, 0);
     putLongPV(loopUsPv, 0);
     putLongPV(uptimeMsPv, 0);
+    getLongPV(mtr1SetPv, &lastCmdMtr1);
+    getLongPV(mtr2SetPv, &lastCmdMtr2);
 
     errlogPrintf("rotarySerial: thread started prefix=%s port=%s baud=%s\n",
         cfg->pvPrefix.c_str(), cfg->serialPort.c_str(), cfg->baudRate.c_str());
@@ -206,6 +249,20 @@ void serialReaderThread(void *arg)
         putLongPV(reconnectsPv, reconnects);
         putBoolPV(connectedPv, true);
         errlogPrintf("rotarySerial: serial open/configured (%s)\n", port);
+
+        {
+            std::ostringstream cmd1;
+            cmd1 << "SET:MTR1:" << lastCmdMtr1 << "\n";
+            if (writeSerialLine(fd, cmd1.str())) {
+                errlogPrintf("rotarySerial: sent %s", cmd1.str().c_str());
+            }
+
+            std::ostringstream cmd2;
+            cmd2 << "SET:MTR2:" << lastCmdMtr2 << "\n";
+            if (writeSerialLine(fd, cmd2.str())) {
+                errlogPrintf("rotarySerial: sent %s", cmd2.str().c_str());
+            }
+        }
 
         std::string line;
         line.reserve(128);
@@ -246,6 +303,25 @@ void serialReaderThread(void *arg)
             }
             lastRxTime = now;
             linesWindow++;
+
+            long mtr1Set = lastCmdMtr1;
+            long mtr2Set = lastCmdMtr2;
+            if (getLongPV(mtr1SetPv, &mtr1Set) && mtr1Set != lastCmdMtr1) {
+                std::ostringstream cmd;
+                cmd << "SET:MTR1:" << mtr1Set << "\n";
+                if (writeSerialLine(fd, cmd.str())) {
+                    lastCmdMtr1 = mtr1Set;
+                    errlogPrintf("rotarySerial: sent %s", cmd.str().c_str());
+                }
+            }
+            if (getLongPV(mtr2SetPv, &mtr2Set) && mtr2Set != lastCmdMtr2) {
+                std::ostringstream cmd;
+                cmd << "SET:MTR2:" << mtr2Set << "\n";
+                if (writeSerialLine(fd, cmd.str())) {
+                    lastCmdMtr2 = mtr2Set;
+                    errlogPrintf("rotarySerial: sent %s", cmd.str().c_str());
+                }
+            }
 
             long enc1 = 0;
             long enc2 = 0;

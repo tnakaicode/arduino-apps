@@ -21,6 +21,15 @@
 
 namespace {
 
+const char *kPersistentStateFile = "rotary_state.dat";
+
+struct PersistentState {
+    long mtr1Set;
+    long mtr2Set;
+    long rpm1Set;
+    long rpm2Set;
+};
+
 epicsMutex serialReaderMutex;
 epicsThreadId serialThreadId = 0;
 bool serialThreadRunning = false;
@@ -169,6 +178,48 @@ bool extractTaggedLong(const std::string& line, const char *tag, long *out)
     return true;
 }
 
+bool loadPersistentState(PersistentState *state)
+{
+    FILE *fp = fopen(kPersistentStateFile, "r");
+    if (!fp) {
+        return false;
+    }
+
+    long m1 = 0;
+    long m2 = 0;
+    long r1 = 0;
+    long r2 = 0;
+    int n = fscanf(fp, "%ld %ld %ld %ld", &m1, &m2, &r1, &r2);
+    fclose(fp);
+    if (n != 4) {
+        return false;
+    }
+
+    state->mtr1Set = m1;
+    state->mtr2Set = m2;
+    state->rpm1Set = r1;
+    state->rpm2Set = r2;
+    return true;
+}
+
+void savePersistentState(const PersistentState& state)
+{
+    const char *tmpFile = "rotary_state.dat.tmp";
+    FILE *fp = fopen(tmpFile, "w");
+    if (!fp) {
+        errlogPrintf("rotarySerial: failed to open persistent state tmp file\n");
+        return;
+    }
+
+    fprintf(fp, "%ld %ld %ld %ld\n",
+        state.mtr1Set, state.mtr2Set, state.rpm1Set, state.rpm2Set);
+    fclose(fp);
+
+    if (rename(tmpFile, kPersistentStateFile) != 0) {
+        errlogPrintf("rotarySerial: failed to rename persistent state file: %s\n", strerror(errno));
+    }
+}
+
 bool isStopRequested()
 {
     epicsGuard<epicsMutex> guard(serialReaderMutex);
@@ -185,6 +236,10 @@ void serialReaderThread(void *arg)
     const std::string syncPv = cfg->pvPrefix + "SYNC:MODE";
     const std::string mtr1SetPv = cfg->pvPrefix + "MTR1:SETPOINT";
     const std::string mtr2SetPv = cfg->pvPrefix + "MTR2:SETPOINT";
+    const std::string mtr1RpmSetPv = cfg->pvPrefix + "MTR1:RPM_SET";
+    const std::string mtr2RpmSetPv = cfg->pvPrefix + "MTR2:RPM_SET";
+    const std::string mtr1RpmFbPv = cfg->pvPrefix + "MTR1:RPM_FB";
+    const std::string mtr2RpmFbPv = cfg->pvPrefix + "MTR2:RPM_FB";
     const std::string connectedPv = cfg->pvPrefix + "ARDUINO:CONNECTED";
     const std::string linesPerSecPv = cfg->pvPrefix + "ARDUINO:LINES_PER_SEC";
     const std::string parseOkPv = cfg->pvPrefix + "ARDUINO:PARSE_OK";
@@ -205,6 +260,9 @@ void serialReaderThread(void *arg)
     long linesWindow = 0;
     long lastCmdMtr1 = 0;
     long lastCmdMtr2 = 0;
+    long lastCmdRpm1 = 0;
+    long lastCmdRpm2 = 0;
+    PersistentState persisted = {0, 0, 0, 0};
     epicsTimeStamp lastRateUpdate;
     epicsTimeStamp lastRxTime;
     epicsTimeGetCurrent(&lastRateUpdate);
@@ -220,8 +278,22 @@ void serialReaderThread(void *arg)
     putLongPV(loopMsPv, 0);
     putLongPV(loopUsPv, 0);
     putLongPV(uptimeMsPv, 0);
+    putLongPV(mtr1RpmFbPv, 0);
+    putLongPV(mtr2RpmFbPv, 0);
+
+    if (loadPersistentState(&persisted)) {
+        putLongPV(mtr1SetPv, persisted.mtr1Set);
+        putLongPV(mtr2SetPv, persisted.mtr2Set);
+        putLongPV(mtr1RpmSetPv, persisted.rpm1Set);
+        putLongPV(mtr2RpmSetPv, persisted.rpm2Set);
+        errlogPrintf("rotarySerial: restored state M1=%ld M2=%ld R1=%ld R2=%ld\n",
+            persisted.mtr1Set, persisted.mtr2Set, persisted.rpm1Set, persisted.rpm2Set);
+    }
+
     getLongPV(mtr1SetPv, &lastCmdMtr1);
     getLongPV(mtr2SetPv, &lastCmdMtr2);
+    getLongPV(mtr1RpmSetPv, &lastCmdRpm1);
+    getLongPV(mtr2RpmSetPv, &lastCmdRpm2);
 
     errlogPrintf("rotarySerial: thread started prefix=%s port=%s baud=%s\n",
         cfg->pvPrefix.c_str(), cfg->serialPort.c_str(), cfg->baudRate.c_str());
@@ -261,6 +333,18 @@ void serialReaderThread(void *arg)
             cmd2 << "SET:MTR2:" << lastCmdMtr2 << "\n";
             if (writeSerialLine(fd, cmd2.str())) {
                 errlogPrintf("rotarySerial: sent %s", cmd2.str().c_str());
+            }
+
+            std::ostringstream cmd3;
+            cmd3 << "SET:RPM1:" << lastCmdRpm1 << "\n";
+            if (writeSerialLine(fd, cmd3.str())) {
+                errlogPrintf("rotarySerial: sent %s", cmd3.str().c_str());
+            }
+
+            std::ostringstream cmd4;
+            cmd4 << "SET:RPM2:" << lastCmdRpm2 << "\n";
+            if (writeSerialLine(fd, cmd4.str())) {
+                errlogPrintf("rotarySerial: sent %s", cmd4.str().c_str());
             }
         }
 
@@ -311,6 +395,11 @@ void serialReaderThread(void *arg)
                 cmd << "SET:MTR1:" << mtr1Set << "\n";
                 if (writeSerialLine(fd, cmd.str())) {
                     lastCmdMtr1 = mtr1Set;
+                    persisted.mtr1Set = lastCmdMtr1;
+                    persisted.mtr2Set = lastCmdMtr2;
+                    persisted.rpm1Set = lastCmdRpm1;
+                    persisted.rpm2Set = lastCmdRpm2;
+                    savePersistentState(persisted);
                     errlogPrintf("rotarySerial: sent %s", cmd.str().c_str());
                 }
             }
@@ -319,6 +408,40 @@ void serialReaderThread(void *arg)
                 cmd << "SET:MTR2:" << mtr2Set << "\n";
                 if (writeSerialLine(fd, cmd.str())) {
                     lastCmdMtr2 = mtr2Set;
+                    persisted.mtr1Set = lastCmdMtr1;
+                    persisted.mtr2Set = lastCmdMtr2;
+                    persisted.rpm1Set = lastCmdRpm1;
+                    persisted.rpm2Set = lastCmdRpm2;
+                    savePersistentState(persisted);
+                    errlogPrintf("rotarySerial: sent %s", cmd.str().c_str());
+                }
+            }
+
+            long rpm1Set = lastCmdRpm1;
+            long rpm2Set = lastCmdRpm2;
+            if (getLongPV(mtr1RpmSetPv, &rpm1Set) && rpm1Set != lastCmdRpm1) {
+                std::ostringstream cmd;
+                cmd << "SET:RPM1:" << rpm1Set << "\n";
+                if (writeSerialLine(fd, cmd.str())) {
+                    lastCmdRpm1 = rpm1Set;
+                    persisted.mtr1Set = lastCmdMtr1;
+                    persisted.mtr2Set = lastCmdMtr2;
+                    persisted.rpm1Set = lastCmdRpm1;
+                    persisted.rpm2Set = lastCmdRpm2;
+                    savePersistentState(persisted);
+                    errlogPrintf("rotarySerial: sent %s", cmd.str().c_str());
+                }
+            }
+            if (getLongPV(mtr2RpmSetPv, &rpm2Set) && rpm2Set != lastCmdRpm2) {
+                std::ostringstream cmd;
+                cmd << "SET:RPM2:" << rpm2Set << "\n";
+                if (writeSerialLine(fd, cmd.str())) {
+                    lastCmdRpm2 = rpm2Set;
+                    persisted.mtr1Set = lastCmdMtr1;
+                    persisted.mtr2Set = lastCmdMtr2;
+                    persisted.rpm1Set = lastCmdRpm1;
+                    persisted.rpm2Set = lastCmdRpm2;
+                    savePersistentState(persisted);
                     errlogPrintf("rotarySerial: sent %s", cmd.str().c_str());
                 }
             }
@@ -353,6 +476,14 @@ void serialReaderThread(void *arg)
                 }
                 if (extractTaggedLong(line, ",UPTIME_MS:", &uptimeMs)) {
                     putLongPV(uptimeMsPv, uptimeMs);
+                }
+                long rpm1Fb = 0;
+                long rpm2Fb = 0;
+                if (extractTaggedLong(line, ",RPM1:", &rpm1Fb)) {
+                    putLongPV(mtr1RpmFbPv, rpm1Fb);
+                }
+                if (extractTaggedLong(line, ",RPM2:", &rpm2Fb)) {
+                    putLongPV(mtr2RpmFbPv, rpm2Fb);
                 }
             } else {
                 parseErr++;

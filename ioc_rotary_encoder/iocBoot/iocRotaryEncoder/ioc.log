@@ -437,3 +437,82 @@ rotarySerial: sent SET:MTR1:1000
 rotarySerial: sent SET:MTR1:800
 rotarySerial: sent SET:MTR1:-8000
 rotarySerial: sent SET:MTR1:800
+rotarySerial: sent SET:MTR1:-800
+rotarySerial: sent SET:MTR1:-1600
+rotarySerial: sent SET:MTR1:-2400
+rotarySerial: sent SET:MTR1:-3200
+rotarySerial: sent SET:MTR1:-5000
+rotarySerial: sent SET:MTR1:2000
+rotarySerial: sent SET:MTR1:5000
+Starting iocInit
+iocRun: All initialization complete
+rotaryStartSerialReader: started serial reader thread prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+rotarySerial: thread started prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+rotarySerial: serial open/configured (/dev/ttyACM0)
+rotarySerial: sent SET:MTR1:0
+rotarySerial: sent SET:MTR2:0
+rotarySerial: sent SET:RPM1:0
+rotarySerial: sent SET:RPM2:0
+rotarySerial: sent SET:RPM1:60
+rotarySerial: sent SET:RPM1:0
+rotarySerial: sent SET:RPM1:60
+rotarySerial: sent SET:RPM1:0
+Starting iocInit
+iocRun: All initialization complete
+rotaryStartSerialReader: started serial reader thread prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+rotarySerial: thread started prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+rotarySerial: serial open/configured (/dev/ttyACM0)
+rotarySerial: sent SET:MTR1:0
+rotarySerial: sent SET:MTR2:0
+rotarySerial: sent SET:RPM1:0
+rotarySerial: sent SET:RPM2:0
+rotarySerial: sent SET:MTR1:1234
+rotarySerial: sent SET:MTR2:-432
+rotarySerial: sent SET:RPM1:45
+rotarySerial: sent SET:RPM2:-30
+Starting iocInit
+iocRun: All initialization complete
+rotaryStartSerialReader: started serial reader thread prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+rotarySerial: restored state M1=1234 M2=-432 R1=45 R2=-30
+rotarySerial: thread started prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+rotarySerial: serial open/configured (/dev/ttyACM0)
+rotarySerial: sent SET:MTR1:1234
+rotarySerial: sent SET:MTR2:-432
+rotarySerial: sent SET:RPM1:45
+rotarySerial: sent SET:RPM2:-30
+rotarySerial: sent SET:RPM1:0
+rotarySerial: sent SET:RPM2:0
+rotarySerial: sent SET:RPM1:-60
+rotarySerial: sent SET:RPM1:0
+rotarySerial: sent SET:MTR1:0
+Starting iocInit
+iocRun: All initialization complete
+rotaryStartSerialReader: started serial reader thread prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+rotarySerial: restored state M1=0 M2=-432 R1=0 R2=0
+rotarySerial: thread started prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+rotarySerial: serial open/configured (/dev/ttyACM0)
+rotarySerial: sent SET:MTR1:0
+rotarySerial: sent SET:MTR2:-432
+rotarySerial: sent SET:RPM1:0
+rotarySerial: sent SET:RPM2:0
+rotarySerial: sent SET:RPM1:30
+rotarySerial: sent SET:MTR1:800
+rotarySerial: sent SET:MTR1:0
+rotarySerial: sent SET:RPM1:0
+rotarySerial: sent SET:RPM1:30
+rotarySerial: sent SET:MTR1:2000
+rotarySerial: sent SET:MTR1:-2000
+rotarySerial: sent SET:MTR1:-1000
+rotarySerial: sent SET:RPM1:60
+rotarySerial: sent SET:MTR1:0
+rotarySerial: sent SET:RPM1:10
+rotarySerial: sent SET:MTR1:-2000
+rotarySerial: sent SET:RPM1:30
+rotarySerial: sent SET:MTR1:-2100
+rotarySerial: sent SET:MTR1:-2500
+rotarySerial: sent SET:MTR1:500
+rotarySerial: sent SET:RPM1:40
+rotarySerial: sent SET:RPM1:50
+rotarySerial: sent SET:RPM1:30
+rotarySerial: sent SET:MTR1:-2500
+rotarySerial: sent SET:MTR1:500

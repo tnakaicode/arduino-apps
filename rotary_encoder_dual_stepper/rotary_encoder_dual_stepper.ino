@@ -42,6 +42,9 @@ AccelStepper motor2(AccelStepper::FULL4WIRE, M2_A_PLUS, M2_A_MINUS, M2_B_PLUS, M
 const bool DEBUG_SERIAL = false;
 
 const long SERIAL_CMD_MAX_ABS = 200000;
+const long SERIAL_RPM_MAX_ABS = 300;
+const float MOTOR_STEPS_PER_REV = 200.0f;
+const float DEFAULT_MAX_SPEED_STEPS_PER_SEC = 900.0f;
 
 // 1ノッチで動かすステップ数
 const long STEP_PER_CLICK = 20;
@@ -49,6 +52,8 @@ const long STEP_PER_CLICK = 20;
 // 目標位置
 long target1 = 0;
 long target2 = 0;
+long rpmCmd1 = 0;
+long rpmCmd2 = 0;
 
 // Encoder click counts (for EPICS PVs)
 int enc1_clicks = 0;
@@ -98,6 +103,25 @@ long clampTarget(long value)
     return value;
 }
 
+long clampRpm(long value)
+{
+    if (value > SERIAL_RPM_MAX_ABS)
+    {
+        return SERIAL_RPM_MAX_ABS;
+    }
+    if (value < -SERIAL_RPM_MAX_ABS)
+    {
+        return -SERIAL_RPM_MAX_ABS;
+    }
+    return value;
+}
+
+float rpmToStepsPerSec(long rpm)
+{
+    long absRpm = (rpm < 0) ? -rpm : rpm;
+    return ((float)absRpm * MOTOR_STEPS_PER_REV) / 60.0f;
+}
+
 void applyMotorTarget(int motorIndex, long value)
 {
     long clamped = clampTarget(value);
@@ -113,6 +137,26 @@ void applyMotorTarget(int motorIndex, long value)
     }
 }
 
+void applyMotorRpm(int motorIndex, long rpm)
+{
+    long clamped = clampRpm(rpm);
+    float sps = rpmToStepsPerSec(clamped);
+    if (sps <= 0.0f)
+    {
+        sps = DEFAULT_MAX_SPEED_STEPS_PER_SEC;
+    }
+    if (motorIndex == 1)
+    {
+        rpmCmd1 = clamped;
+        motor1.setMaxSpeed(sps);
+    }
+    else if (motorIndex == 2)
+    {
+        rpmCmd2 = clamped;
+        motor2.setMaxSpeed(sps);
+    }
+}
+
 void handleSerialCommand(const String& cmd)
 {
     if (cmd.length() == 0)
@@ -122,6 +166,8 @@ void handleSerialCommand(const String& cmd)
 
     const char *prefix1 = "SET:MTR1:";
     const char *prefix2 = "SET:MTR2:";
+    const char *rpmPrefix1 = "SET:RPM1:";
+    const char *rpmPrefix2 = "SET:RPM2:";
 
     if (cmd.startsWith(prefix1))
     {
@@ -136,6 +182,21 @@ void handleSerialCommand(const String& cmd)
         applyMotorTarget(2, value);
         return;
     }
+
+    if (cmd.startsWith(rpmPrefix1))
+    {
+        long value = cmd.substring(strlen(rpmPrefix1)).toInt();
+        applyMotorRpm(1, value);
+        return;
+    }
+
+    if (cmd.startsWith(rpmPrefix2))
+    {
+        long value = cmd.substring(strlen(rpmPrefix2)).toInt();
+        applyMotorRpm(2, value);
+        return;
+    }
+
 }
 
 void pollSerialCommands()
@@ -324,7 +385,7 @@ void loop()
     handleSwitch1();
     handleSwitch2();
 
-    // 非ブロッキングで両モーターを追従
+    // 常に位置制御: 目標値変更時に移動を開始し、RPM設定は最大速度として反映
     motor1.run();
     motor2.run();
     
@@ -343,7 +404,7 @@ void outputEpicsData()
         lastEpicsUpdate = now;
         
         // Format:
-        // ENC1:value,ENC2:value,MTR1:value,MTR2:value,SYNC:value,LOOP_HZ:value,LOOP_MS:value,LOOP_US:value,UPTIME_MS:value
+        // ENC1:value,ENC2:value,MTR1:value,MTR2:value,SYNC:value,RPM1:value,RPM2:value,LOOP_HZ:value,LOOP_MS:value,LOOP_US:value,UPTIME_MS:value
         Serial.print("ENC1:");
         Serial.print(enc1_clicks);
         Serial.print(",ENC2:");
@@ -354,6 +415,10 @@ void outputEpicsData()
         Serial.print(motor2.currentPosition());
         Serial.print(",SYNC:");
         Serial.print(syncMode ? 1 : 0);
+        Serial.print(",RPM1:");
+        Serial.print(rpmCmd1);
+        Serial.print(",RPM2:");
+        Serial.print(rpmCmd2);
         Serial.print(",LOOP_HZ:");
         Serial.print(loopRateHz);
         Serial.print(",LOOP_MS:");

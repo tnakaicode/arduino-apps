@@ -44,6 +44,38 @@ record(longout, "$(P)$(R)MTR2:SETPOINT")
     field(EGU, "steps")
 }
 
+record(longout, "$(P)$(R)MTR1:RPM_SET")
+{
+    field(DESC, "Motor 1 speed setpoint")
+    field(VAL, "0")
+    field(EGU, "rpm")
+    field(DRVL, "-300")
+    field(DRVH, "300")
+}
+
+record(longout, "$(P)$(R)MTR2:RPM_SET")
+{
+    field(DESC, "Motor 2 speed setpoint")
+    field(VAL, "0")
+    field(EGU, "rpm")
+    field(DRVL, "-300")
+    field(DRVH, "300")
+}
+
+record(longin, "$(P)$(R)MTR1:RPM_FB")
+{
+    field(DESC, "Motor 1 speed command feedback")
+    field(SCAN, "Passive")
+    field(EGU, "rpm")
+}
+
+record(longin, "$(P)$(R)MTR2:RPM_FB")
+{
+    field(DESC, "Motor 2 speed command feedback")
+    field(SCAN, "Passive")
+    field(EGU, "rpm")
+}
+
 record(bi, "$(P)$(R)SYNC:MODE")
 {
     field(DESC, "Synchronization Mode")

@@ -516,3 +516,61 @@ rotarySerial: sent SET:RPM1:50
 rotarySerial: sent SET:RPM1:30
 rotarySerial: sent SET:MTR1:-2500
 rotarySerial: sent SET:MTR1:500
+rotarySerial: sent SET:MTR1:0
+rotarySerial: sent SET:RPM1:40
+rotarySerial: sent SET:MTR1:-1000
+rotarySerial: sent SET:RPM1:60
+rotarySerial: sent SET:MTR1:0
+rotarySerial: sent SET:MTR1:-2000
+rotarySerial: sent SET:RPM1:30
+rotarySerial: sent SET:MTR1:-2500
+rotarySerial: sent SET:MTR1:500
+rotarySerial: sent SET:RPM1:60
+rotarySerial: sent SET:RPM1:20
+rotarySerial: sent SET:RPM1:30
+rotarySerial: sent SET:MTR1:-2500
+rotarySerial: sent SET:MTR1:0
+rotarySerial: sent SET:RPM1:40
+rotarySerial: sent SET:MTR1:-1500
+rotarySerial: sent SET:RPM1:120
+rotarySerial: sent SET:MTR1:0
+rotarySerial: sent SET:RPM1:200
+rotarySerial: sent SET:MTR1:-1500
+rotarySerial: sent SET:RPM1:60
+rotarySerial: sent SET:MTR1:500
+rotarySerial: sent SET:MTR1:0
+rotarySerial: sent SET:MTR1:-1500
+rotarySerial: sent SET:MTR1:200
+rotarySerial: sent SET:MTR1:-2200
+rotarySerial: sent SET:MTR1:200
+rotarySerial: sent SET:RPM1:30
+rotarySerial: sent SET:RPM1:20
+rotarySerial: sent SET:MTR1:-1200
+rotarySerial: sent SET:MTR1:-2200
+rotarySerial: sent SET:RPM1:40
+Starting iocInit
+iocRun: All initialization complete
+rotaryStartSerialReader: started serial reader thread prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+rotarySerial: restored state M1=-2200 M2=-432 R1=40 R2=0
+rotarySerial: thread started prefix=RE:ch0: port=/dev/ttyACM0 baud=115200
+rotarySerial: serial open/configured (/dev/ttyACM0)
+rotarySerial: sent SET:MTR1:-2200
+rotarySerial: sent SET:MTR2:-432
+rotarySerial: sent SET:RPM1:40
+rotarySerial: sent SET:RPM2:0
+rotarySerial: sent SET:RPM2:40
+rotarySerial: sent SET:RPM2:20
+rotarySerial: sent SET:RPM2:50
+rotarySerial: sent SET:RPM2:60
+rotarySerial: sent SET:RPM2:120
+rotarySerial: sent SET:RPM2:10
+rotarySerial: sent SET:RPM2:200
+rotarySerial: sent SET:RPM2:100
+rotarySerial: sent SET:MTR1:0
+rotarySerial: sent SET:RPM1:30
+rotarySerial: sent SET:MTR1:-1200
+rotarySerial: sent SET:MTR1:0
+rotarySerial: sent SET:MTR1:500
+rotarySerial: sent SET:MTR1:1500
+rotarySerial: sent SET:MTR1:2000
+rotarySerial: sent SET:MTR1:0

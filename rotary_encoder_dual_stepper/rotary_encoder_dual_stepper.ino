@@ -267,7 +267,7 @@ void handleEncoder1()
     lastClk1State = clkState;
 }
 
-// --- Encoder2: monitor only (no motor control) ---
+// --- Encoder2: controls Motor2 target position ---
 void handleEncoder2()
 {
     int clkState = digitalRead(ENC2_CLK_PIN);
@@ -275,14 +275,19 @@ void handleEncoder2()
     if (lastClk2State == HIGH && clkState == LOW)
     {
         int dtState = digitalRead(ENC2_DT_PIN);
-        long delta = (dtState != clkState) ? 1 : -1;
-        enc2_clicks += (delta > 0) ? 1 : -1;
+        long deltaClicks = (dtState != clkState) ? 1 : -1;
+        long deltaSteps = deltaClicks * STEP_PER_CLICK;
+        enc2_clicks += (deltaClicks > 0) ? 1 : -1;
+
+        target2 += deltaSteps;
+        motor2.moveTo(target2);
 
         if (DEBUG_SERIAL)
         {
-            Serial.print("ENC2 delta=");
-            Serial.print(delta);
-            Serial.println();
+            Serial.print("ENC2 clicks=");
+            Serial.print(enc2_clicks);
+            Serial.print(" target2=");
+            Serial.println(target2);
         }
     }
 

@@ -52,6 +52,17 @@ typedef struct {
     bool      writable;
 } pv_entry_t;
 
+/* PV index constants (pvdb_init の登録順と一致させること) */
+enum {
+    PV_IDX_LED = 0,
+    PV_IDX_UPTIME,
+    PV_IDX_TEMP,
+    PV_IDX_FREQ_SET,
+    PV_IDX_RUN,
+    PV_IDX_PIN,
+    PV_IDX_VOLT,
+};
+
 /* ============================================================
  * API
  * ============================================================ */
@@ -78,6 +89,9 @@ bool pvdb_get(int idx, pv_value_t *out, uint16_t *type, uint16_t *count);
  * writable = false の PV への書き込みは無視される。
  */
 bool pvdb_put(int idx, const pv_value_t *val);
+
+/** 内部更新用 API (writable 属性を無視して値を更新する) */
+bool pvdb_update(int idx, const pv_value_t *val);
 
 /** エントリへの const ポインタを返す (読み取り専用参照) */
 const pv_entry_t *pvdb_entry(int idx);

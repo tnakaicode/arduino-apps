@@ -36,10 +36,14 @@ void pvdb_init(void)
 
     s_count = 0;
 
-    /* PV 登録 (インデックス順に注意) */
-    add_pv("PICO:LED",    DBR_ENUM,  1, true);   /* idx 0 */
-    add_pv("PICO:UPTIME", DBR_LONG,  1, false);  /* idx 1 */
-    add_pv("PICO:TEMP",   DBR_FLOAT, 1, false);  /* idx 2 */
+    /* PV 登録 (インデックス順に注意: pv_database.h の enum と一致) */
+    add_pv("PICO:LED",      DBR_ENUM,  1, true);   /* idx 0 */
+    add_pv("PICO:UPTIME",   DBR_LONG,  1, false);  /* idx 1 */
+    add_pv("PICO:TEMP",     DBR_FLOAT, 1, false);  /* idx 2 */
+    add_pv("PICO:FREQ_SET", DBR_FLOAT, 1, true);   /* idx 3 */
+    add_pv("PICO:RUN",      DBR_ENUM,  1, true);   /* idx 4 */
+    add_pv("PICO:PIN",      DBR_ENUM,  1, false);  /* idx 5 */
+    add_pv("PICO:VOLT",     DBR_FLOAT, 1, false);  /* idx 6 */
 
     /* RP2350 内部温度センサ ADC 初期化 */
     adc_init();
@@ -61,17 +65,24 @@ bool pvdb_get(int idx, pv_value_t *out, uint16_t *type, uint16_t *count)
     xSemaphoreTake(s_mutex, portMAX_DELAY);
 
     /* PICO:UPTIME: 呼び出し時に更新 */
-    if (idx == 1) {
-        s_db[1].value.lval =
+    if (idx == PV_IDX_UPTIME) {
+        s_db[PV_IDX_UPTIME].value.lval =
             (int32_t)(to_ms_since_boot(get_absolute_time()) / 1000);
     }
 
     /* PICO:TEMP: RP2350 内部温度センサを読む */
-    if (idx == 2) {
+    if (idx == PV_IDX_TEMP) {
         adc_select_input(4);                       /* ch4 = 内部温度センサ */
         uint16_t raw = adc_read();
         float voltage = (float)raw * 3.3f / 4096.0f;
-        s_db[2].value.fval = 27.0f - (voltage - 0.706f) / 0.001721f;
+        s_db[PV_IDX_TEMP].value.fval = 27.0f - (voltage - 0.706f) / 0.001721f;
+    }
+
+    /* PICO:VOLT: GP26(ADC0) を読む */
+    if (idx == PV_IDX_VOLT) {
+        adc_select_input(0);  /* GPIO26 = ADC0 */
+        uint16_t raw = adc_read();
+        s_db[PV_IDX_VOLT].value.fval = ((float)raw * 3.3f) / 4096.0f;
     }
 
     *out   = s_db[idx].value;
@@ -87,6 +98,15 @@ bool pvdb_put(int idx, const pv_value_t *val)
     if (idx < 0 || idx >= s_count) return false;
     if (!s_db[idx].writable)       return false;
 
+    xSemaphoreTake(s_mutex, portMAX_DELAY);
+    s_db[idx].value = *val;
+    xSemaphoreGive(s_mutex);
+    return true;
+}
+
+bool pvdb_update(int idx, const pv_value_t *val)
+{
+    if (idx < 0 || idx >= s_count) return false;
     xSemaphoreTake(s_mutex, portMAX_DELAY);
     s_db[idx].value = *val;
     xSemaphoreGive(s_mutex);

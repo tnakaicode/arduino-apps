@@ -17,6 +17,8 @@ project(pico2w_epics_ioc C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+
 pico_sdk_init()
 
 add_executable(pico2w_epics_ioc
@@ -39,4 +41,15 @@ target_link_libraries(pico2w_epics_ioc
 target_include_directories(pico2w_epics_ioc PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 
 pico_enable_stdio_usb(pico2w_epics_ioc 1)
-pico_add_extra_outputs(pico2w_epics_ioc)
+
+# NOTE:
+# picotool uf2 conversion can crash on some Windows environments.
+# Generate HEX/BIN/UF2 via objcopy + local converter script instead.
+add_custom_command(TARGET pico2w_epics_ioc POST_BUILD
+    COMMAND ${CMAKE_OBJCOPY} -Oihex $<TARGET_FILE:pico2w_epics_ioc> ${CMAKE_CURRENT_BINARY_DIR}/pico2w_epics_ioc.hex
+    COMMAND ${CMAKE_OBJCOPY} -Obinary $<TARGET_FILE:pico2w_epics_ioc> ${CMAKE_CURRENT_BINARY_DIR}/pico2w_epics_ioc.bin
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/tools/bin_to_uf2.py
+            ${CMAKE_CURRENT_BINARY_DIR}/pico2w_epics_ioc.bin
+            ${CMAKE_CURRENT_BINARY_DIR}/pico2w_epics_ioc.uf2
+    COMMENT "Generating HEX/BIN/UF2 artifacts without picotool"
+)

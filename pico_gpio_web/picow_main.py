@@ -7,6 +7,12 @@ import machine
 import utime
 import gc
 
+# === ネットワーク設定（固定IP） ===
+PICO_IP = "192.168.3.100"
+PICO_MASK = "255.255.255.0"
+PICO_GW = "192.168.3.1"
+PICO_DNS = "192.168.3.1"
+
 # === WiFi設定（config.txtから読み込み） ===
 try:
     with open('/config.txt', 'r') as f:
@@ -55,9 +61,9 @@ def get_voltage():
 def connect_wifi():
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
-    wlan.ifconfig(('192.168.3.100', '255.255.255.0', '192.168.3.1', '192.168.3.1'))
+    wlan.ifconfig((PICO_IP, PICO_MASK, PICO_GW, PICO_DNS))
     wlan.connect(WIFI_SSID, WIFI_PASS)
-    print("WiFi接続中...")
+    print("WiFi接続中... 固定IP:", PICO_IP)
     for _ in range(20):
         if wlan.isconnected():
             ip = wlan.ifconfig()[0]

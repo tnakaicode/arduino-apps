@@ -32,6 +32,11 @@
 #define GP15_PIN 15
 #define HTTP_PORT 80
 
+#define GPIO_TASK_STACK_WORDS   768
+#define NETMGR_TASK_STACK_WORDS 1536
+#define HTTP_TASK_STACK_WORDS   2048
+#define CA_TASK_STACK_WORDS     2048
+
 /* 固定IP要件: 192.168.3.100 */
 #define STATIC_IP   "192.168.3.100"
 #define STATIC_MASK "255.255.255.0"
@@ -40,6 +45,11 @@
 static volatile bool g_network_ready = false;
 static volatile bool g_cyw43_ready = false;
 static volatile bool g_network_tasks_started = false;
+
+typedef struct {
+    const char *name;
+    uint32_t auth;
+} wifi_auth_try_t;
 
 static const char *k_html_response =
     "HTTP/1.0 200 OK\r\n"
@@ -51,14 +61,57 @@ static const char *k_html_response =
     "<p>API: /set?freq=10.0, /stop, /status</p>"
     "</body></html>";
 
-static void set_static_ip(void)
+static bool wait_for_netif_ready(uint32_t timeout_ms)
+{
+    const TickType_t deadline = xTaskGetTickCount() + pdMS_TO_TICKS(timeout_ms);
+
+    while (xTaskGetTickCount() < deadline) {
+        if (netif_default && netif_is_up(netif_default) && netif_is_link_up(netif_default)) {
+            return true;
+        }
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+    return false;
+}
+
+static bool set_static_ip(void)
 {
     ip4_addr_t ip, mask, gw;
 
-    if (!ip4addr_aton(STATIC_IP, &ip)) return;
-    if (!ip4addr_aton(STATIC_MASK, &mask)) return;
-    if (!ip4addr_aton(STATIC_GW, &gw)) return;
+    if (!ip4addr_aton(STATIC_IP, &ip)) return false;
+    if (!ip4addr_aton(STATIC_MASK, &mask)) return false;
+    if (!ip4addr_aton(STATIC_GW, &gw)) return false;
+    if (!netif_default) return false;
+
     netif_set_addr(netif_default, &ip, &mask, &gw);
+    return true;
+}
+
+static bool connect_wifi_with_fallback(void)
+{
+    static const wifi_auth_try_t k_auth_tries[] = {
+        {"WPA2_AES_PSK", CYW43_AUTH_WPA2_AES_PSK},
+        {"WPA2_MIXED_PSK", CYW43_AUTH_WPA2_MIXED_PSK},
+        {"WPA_TKIP_PSK", CYW43_AUTH_WPA_TKIP_PSK},
+    };
+
+    for (size_t i = 0; i < sizeof(k_auth_tries) / sizeof(k_auth_tries[0]); ++i) {
+        int rc;
+
+        printf("[INFO] Wi-Fi auth try: %s\n", k_auth_tries[i].name);
+        rc = cyw43_arch_wifi_connect_timeout_ms(
+            WIFI_SSID,
+            WIFI_PASSWORD,
+            k_auth_tries[i].auth,
+            15000);
+        if (rc == 0) {
+            return true;
+        }
+
+        printf("[WARN] Wi-Fi auth %s failed rc=%d\n", k_auth_tries[i].name, rc);
+    }
+
+    return false;
 }
 
 static float query_freq_set(void)
@@ -273,27 +326,36 @@ static void network_manager_task(void *params)
 
         if (!g_network_ready) {
             printf("[INFO] Connecting Wi-Fi: %s\n", WIFI_SSID);
-            if (cyw43_arch_wifi_connect_timeout_ms(
-                    WIFI_SSID, WIFI_PASSWORD,
-                    CYW43_AUTH_WPA2_AES_PSK, 10000)) {
+            if (!connect_wifi_with_fallback()) {
                 printf("[WARN] Wi-Fi connect failed; retry in 3s\n");
                 vTaskDelay(pdMS_TO_TICKS(3000));
                 continue;
             }
 
-            set_static_ip();
+            if (!wait_for_netif_ready(5000)) {
+                printf("[WARN] netif not ready; retry in 3s\n");
+                vTaskDelay(pdMS_TO_TICKS(3000));
+                continue;
+            }
+
+            if (!set_static_ip()) {
+                printf("[WARN] static IP apply failed; retry in 3s\n");
+                vTaskDelay(pdMS_TO_TICKS(3000));
+                continue;
+            }
+
             g_network_ready = true;
             printf("[INFO] Connected. Fixed IP: %s\n", STATIC_IP);
         }
 
         if (!g_network_tasks_started) {
-            if (xTaskCreate(http_server_task, "HTTP", 1024, NULL, 2, NULL) != pdPASS) {
+            if (xTaskCreate(http_server_task, "HTTP", HTTP_TASK_STACK_WORDS, NULL, 2, NULL) != pdPASS) {
                 printf("[ERR] xTaskCreate HTTP failed\n");
             }
-            if (xTaskCreate(ca_udp_task, "CA_UDP", 768, NULL, configMAX_PRIORITIES - 1, NULL) != pdPASS) {
+            if (xTaskCreate(ca_udp_task, "CA_UDP", CA_TASK_STACK_WORDS, NULL, configMAX_PRIORITIES - 1, NULL) != pdPASS) {
                 printf("[ERR] xTaskCreate CA_UDP failed\n");
             }
-            if (xTaskCreate(ca_tcp_listener_task, "CA_TCP", 768, NULL, configMAX_PRIORITIES - 1, NULL) != pdPASS) {
+            if (xTaskCreate(ca_tcp_listener_task, "CA_TCP", CA_TASK_STACK_WORDS, NULL, configMAX_PRIORITIES - 1, NULL) != pdPASS) {
                 printf("[ERR] xTaskCreate CA_TCP failed\n");
             }
 
@@ -308,16 +370,22 @@ static void network_manager_task(void *params)
 int main(void)
 {
     stdio_init_all();
-    sleep_ms(1200);
+    sleep_ms(1500);
     printf("[INFO] Booting pico2w_epics_ioc...\n");
+
+    // Keep startup simple for a few seconds so USB CDC can enumerate first.
+    for (int i = 0; i < 30; ++i) {
+        sleep_ms(100);
+    }
+    printf("[INFO] Starting RTOS tasks...\n");
 
     pvdb_init();
     printf("[INFO] PV database initialized (%d PVs)\n", pvdb_count());
 
-    if (xTaskCreate(gpio_control_task, "GPIO_CTRL", 512, NULL, 2, NULL) != pdPASS) {
+    if (xTaskCreate(gpio_control_task, "GPIO_CTRL", GPIO_TASK_STACK_WORDS, NULL, 2, NULL) != pdPASS) {
         printf("[ERR] xTaskCreate GPIO_CTRL failed\n");
     }
-    if (xTaskCreate(network_manager_task, "NET_MGR", 1024, NULL, 3, NULL) != pdPASS) {
+    if (xTaskCreate(network_manager_task, "NET_MGR", NETMGR_TASK_STACK_WORDS, NULL, 3, NULL) != pdPASS) {
         printf("[ERR] xTaskCreate NET_MGR failed\n");
     }
 

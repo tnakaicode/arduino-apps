@@ -17,6 +17,7 @@
 #define configMAX_TASK_NAME_LEN                 16
 #define configUSE_16_BIT_TICKS                  0
 #define configIDLE_SHOULD_YIELD                 1
+#define configNUMBER_OF_CORES                   1
 
 /* ============================================================
  * メモリ管理
@@ -50,6 +51,12 @@
 #define configUSE_MALLOC_FAILED_HOOK            0
 #define configUSE_DAEMON_TASK_STARTUP_HOOK      0
 #define configCHECK_FOR_STACK_OVERFLOW          0
+
+/* RP2350 port stability tuning for this project */
+#define configUSE_DYNAMIC_EXCEPTION_HANDLERS    0
+#define configCHECK_HANDLER_INSTALLATION        0
+#define configSUPPORT_PICO_SYNC_INTEROP         0
+#define configSUPPORT_PICO_TIME_INTEROP         0
 
 /* ============================================================
  * デバッグ・統計

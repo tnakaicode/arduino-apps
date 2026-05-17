@@ -35,6 +35,10 @@ add_executable(pico2w_usb_diag
     usb_diag_main.c
 )
 
+add_executable(pico2w_freertos_usb_diag
+    freertos_usb_main.c
+)
+
 # 必要なライブラリのリンク
 target_link_libraries(pico2w_epics_ioc
     pico_stdlib
@@ -49,13 +53,22 @@ target_link_libraries(pico2w_usb_diag
     pico_stdlib
 )
 
+target_link_libraries(pico2w_freertos_usb_diag
+    pico_stdlib
+    FreeRTOS-Kernel
+    FreeRTOS-Kernel-Heap4
+)
+
 # インクルードパスの設定（FreeRTOSConfig.h, lwipopts.h などをここから読む）
 target_include_directories(pico2w_epics_ioc PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 target_include_directories(pico2w_usb_diag PRIVATE ${CMAKE_CURRENT_LIST_DIR})
+target_include_directories(pico2w_freertos_usb_diag PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 
 pico_enable_stdio_usb(pico2w_epics_ioc 1)
 pico_enable_stdio_usb(pico2w_usb_diag 1)
+pico_enable_stdio_usb(pico2w_freertos_usb_diag 1)
 pico_enable_stdio_uart(pico2w_usb_diag 0)
+pico_enable_stdio_uart(pico2w_freertos_usb_diag 0)
 
 # NOTE:
 # picotool uf2 conversion can crash on some Windows environments.
@@ -76,4 +89,13 @@ add_custom_command(TARGET pico2w_usb_diag POST_BUILD
             ${CMAKE_CURRENT_BINARY_DIR}/pico2w_usb_diag.bin
             ${CMAKE_CURRENT_BINARY_DIR}/pico2w_usb_diag.uf2
     COMMENT "Generating USB diagnostic HEX/BIN/UF2 artifacts"
+)
+
+add_custom_command(TARGET pico2w_freertos_usb_diag POST_BUILD
+    COMMAND ${CMAKE_OBJCOPY} -Oihex $<TARGET_FILE:pico2w_freertos_usb_diag> ${CMAKE_CURRENT_BINARY_DIR}/pico2w_freertos_usb_diag.hex
+    COMMAND ${CMAKE_OBJCOPY} -Obinary $<TARGET_FILE:pico2w_freertos_usb_diag> ${CMAKE_CURRENT_BINARY_DIR}/pico2w_freertos_usb_diag.bin
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/tools/bin_to_uf2.py
+            ${CMAKE_CURRENT_BINARY_DIR}/pico2w_freertos_usb_diag.bin
+            ${CMAKE_CURRENT_BINARY_DIR}/pico2w_freertos_usb_diag.uf2
+    COMMENT "Generating FreeRTOS USB diagnostic HEX/BIN/UF2 artifacts"
 )

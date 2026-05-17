@@ -1,70 +1,94 @@
+/**
+ * main.c - Pico 2W EPICS IOC エントリポイント
+ *
+ * 起動シーケンス:
+ *   1. Wi-Fi 接続 (CYW43 + FreeRTOS 統合モード)
+ *   2. PV データベース初期化
+ *   3. FreeRTOS タスク生成
+ *      - LED 点滅タスク (動作確認用)
+ *      - EPICS CA UDP タスク (PV サーチ応答, ポート 5064)
+ *      - EPICS CA TCP タスク (チャンネル読み書き, ポート 5064)
+ *   4. FreeRTOS スケジューラ起動
+ *
+ * 対応 PV:
+ *   PICO:LED    … DBR_ENUM  0=消灯 / 1=点灯  (caput で制御)
+ *   PICO:UPTIME … DBR_LONG  起動後経過秒数   (caget / camonitor)
+ *   PICO:TEMP   … DBR_FLOAT RP2350 内部温度  (caget / camonitor)
+ *
+ * 必要環境変数 (CMake ビルド前に設定):
+ *   PICO_SDK_PATH       … pico-sdk のルートパス
+ *   FREERTOS_KERNEL_PATH… FreeRTOS-Kernel のルートパス
+ */
+
 #include <stdio.h>
+#include <string.h>
+
 #include "pico/stdlib.h"
 #include "pico/cyw43_arch.h"
+#include "lwip/netif.h"
+
 #include "FreeRTOS.h"
 #include "task.h"
-#include "lwip/sockets.h"
 
-#define WIFI_SSID "あなたのWi-FiのSSID"
-#define WIFI_PASSWORD "Wi-Fiのパスワード"
-#define EPICS_PORT 5064
+#include "epics_ca.h"
+#include "pv_database.h"
+#include "wifi_config.h"   /* WIFI_SSID / WIFI_PASSWORD */
 
-// EPICS IOCとしての通信処理を行うタスク
-void epics_ioc_task(__unused void *params) {
-    int server_fd;
-    struct sockaddr_in server_addr, client_addr;
-    char buffer[512];
-
-    // UDPソケットの作成（EPICS Channel Accessのサーチは主にUDP 5064番）
-    server_fd = socket(AF_INET, SOCK_DGRAM, 0);
-    
-    memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = INADDR_ANY;
-    server_addr.sin_port = htons(EPICS_PORT);
-
-    bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
-    printf("EPICS IOC Task: Listening on UDP port %d...\n", EPICS_PORT);
-
+/* ============================================================
+ * LED 点滅タスク (Wi-Fi 接続後の動作確認)
+ * ============================================================ */
+static void led_blink_task(void *params)
+{
+    (void)params;
+    bool led = false;
     while (1) {
-        socklen_t client_len = sizeof(client_addr);
-        // ホストPCのcagetなどからの検索要求（CA_PROTO_SEARCH）を待つ
-        int len = recvfrom(server_fd, buffer, sizeof(buffer), 0, 
-                           (struct sockaddr *)&client_addr, &client_len);
-        
-        if (len > 0) {
-            // 💡 ここにEPICSプロトコルの解析と応答ロジックを実装します。
-            // 受信パケットのヘッダを解析し、探しているPV名（例: "PICO:LED"）が
-            // 一致した場合に「そのPVはここにあります」という応答（CA_PROTO_SEARCH_REPLY）を
-            // `sendto` でホストPCに送り返します。
-            printf("Received EPICS Search Packet! Size: %d\n", len);
-        }
-        vTaskDelay(pdMS_TO_TICKS(10)); // タスクを一時譲って他の処理（Wi-Fi維持など）に回す
+        led = !led;
+        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, led);
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
 
-int main() {
+/* ============================================================
+ * エントリポイント
+ * ============================================================ */
+int main(void)
+{
     stdio_init_all();
-    
-    // Wi-Fiチップの初期化（FreeRTOSモード）
+
+    /* Wi-Fi チップの初期化 (FreeRTOS 統合モード) */
     if (cyw43_arch_init()) {
-        printf("Wi-Fi Init Failed\n");
+        printf("[ERR] Wi-Fi init failed\n");
         return -1;
     }
     cyw43_arch_enable_sta_mode();
 
-    printf("Connecting to Wi-Fi...\n");
-    if (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 30000)) {
-        printf("Connect Failed\n");
+    printf("[INFO] Connecting to Wi-Fi: %s\n", WIFI_SSID);
+    if (cyw43_arch_wifi_connect_timeout_ms(
+            WIFI_SSID, WIFI_PASSWORD,
+            CYW43_AUTH_WPA2_AES_PSK, 30000)) {
+        printf("[ERR] Wi-Fi connect failed\n");
         return -1;
     }
-    printf("Connected! IP: %s\n", ip4addr_ntoa(netif_ip4_addr(netif_default)));
+    printf("[INFO] Connected! IP: %s\n",
+           ip4addr_ntoa(netif_ip4_addr(netif_default)));
 
-    // FreeRTOSのタスクとしてEPICS IOCを生成
-    xTaskCreate(epics_ioc_task, "EPICS_IOC_Task", 4096, NULL, configMAX_PRIORITIES - 1, NULL);
+    /* PV データベース初期化 */
+    pvdb_init();
+    printf("[INFO] PV database initialized (%d PVs)\n", pvdb_count());
 
-    // OS（スケジューラ）の起動（ここからマルチタスクが始まる）
+    /* FreeRTOS タスク生成 */
+    xTaskCreate(led_blink_task,       "LED",        256,  NULL,
+                1, NULL);
+    xTaskCreate(ca_udp_task,          "CA_UDP",     512,  NULL,
+                configMAX_PRIORITIES - 1, NULL);
+    xTaskCreate(ca_tcp_listener_task, "CA_TCP",     512,  NULL,
+                configMAX_PRIORITIES - 1, NULL);
+
+    /* FreeRTOS スケジューラ起動 (ここから先には戻らない) */
     vTaskStartScheduler();
 
-    while(1); // ここには到達しない
+    /* 到達しない */
+    while (1);
+    return 0;
 }
+

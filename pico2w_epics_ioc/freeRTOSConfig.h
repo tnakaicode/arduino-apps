@@ -86,10 +86,19 @@
 #define INCLUDE_xTaskGetIdleTaskHandle          0
 #define INCLUDE_eTaskGetState                   0
 
+#define INCLUDE_xSemaphoreGetMutexHolder        1
+#define INCLUDE_xTimerPendFunctionCall          1
+
 /* ============================================================
  * アサート
  * ============================================================ */
+
+// Cortex-M33 (RP2350) FPU/MPU/TrustZone defines (required by portmacrocommon.h)
+#define configENABLE_FPU        1
+#define configENABLE_MPU        0
+#define configENABLE_TRUSTZONE  0
+
 #define configASSERT(x) \
-    do { if ((x) == 0) { taskDISABLE_INTERRUPTS(); for (;;); } } while (0)
+    do { if ((x) == 0) { portDISABLE_INTERRUPTS(); for (;;); } } while (0)
 
 #endif /* FREERTOS_CONFIG_H */

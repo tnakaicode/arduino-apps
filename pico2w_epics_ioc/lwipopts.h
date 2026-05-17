@@ -58,4 +58,5 @@
 #define CHECKSUM_CHECK_UDP          1
 #define CHECKSUM_CHECK_TCP          1
 
+#define LWIP_TIMEVAL_PRIVATE 0
 #endif /* _LWIPOPTS_H */

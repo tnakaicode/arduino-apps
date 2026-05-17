@@ -17,7 +17,9 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
+#define LWIP_PROVIDE_ERRNO 1
 #include "lwip/sockets.h"
+#undef poll
 #include "lwip/inet.h"
 #include "pico/cyw43_arch.h"
 

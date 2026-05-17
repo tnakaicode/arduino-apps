@@ -36,7 +36,10 @@
 #define STATIC_IP   "192.168.3.100"
 #define STATIC_MASK "255.255.255.0"
 #define STATIC_GW   "192.168.3.1"
-#define STATIC_DNS  "192.168.3.1"
+
+static volatile bool g_network_ready = false;
+static volatile bool g_cyw43_ready = false;
+static volatile bool g_network_tasks_started = false;
 
 static const char *k_html_response =
     "HTTP/1.0 200 OK\r\n"
@@ -122,7 +125,9 @@ static void gpio_control_task(void *params)
         float freq = query_freq_set();
         int run = query_run();
 
-        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, query_led());
+        if (g_cyw43_ready) {
+            cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, query_led());
+        }
 
         if (run && freq > 0.0f) {
             uint32_t half_period_us = (uint32_t)(500000.0f / freq);
@@ -166,7 +171,10 @@ static void http_server_task(void *params)
     (void)params;
 
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
-    configASSERT(server_fd >= 0);
+    if (server_fd < 0) {
+        printf("[ERR] HTTP socket create failed\n");
+        vTaskDelete(NULL);
+    }
 
     int opt = 1;
     setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
@@ -246,38 +254,78 @@ static void http_server_task(void *params)
     }
 }
 
+static void network_manager_task(void *params)
+{
+    (void)params;
+
+    while (1) {
+        if (!g_cyw43_ready) {
+            if (cyw43_arch_init()) {
+                printf("[WARN] Wi-Fi init failed; retry in 5s\n");
+                vTaskDelay(pdMS_TO_TICKS(5000));
+                continue;
+            }
+
+            g_cyw43_ready = true;
+            cyw43_arch_enable_sta_mode();
+            printf("[INFO] Wi-Fi driver ready\n");
+        }
+
+        if (!g_network_ready) {
+            printf("[INFO] Connecting Wi-Fi: %s\n", WIFI_SSID);
+            if (cyw43_arch_wifi_connect_timeout_ms(
+                    WIFI_SSID, WIFI_PASSWORD,
+                    CYW43_AUTH_WPA2_AES_PSK, 10000)) {
+                printf("[WARN] Wi-Fi connect failed; retry in 3s\n");
+                vTaskDelay(pdMS_TO_TICKS(3000));
+                continue;
+            }
+
+            set_static_ip();
+            g_network_ready = true;
+            printf("[INFO] Connected. Fixed IP: %s\n", STATIC_IP);
+        }
+
+        if (!g_network_tasks_started) {
+            if (xTaskCreate(http_server_task, "HTTP", 1024, NULL, 2, NULL) != pdPASS) {
+                printf("[ERR] xTaskCreate HTTP failed\n");
+            }
+            if (xTaskCreate(ca_udp_task, "CA_UDP", 768, NULL, configMAX_PRIORITIES - 1, NULL) != pdPASS) {
+                printf("[ERR] xTaskCreate CA_UDP failed\n");
+            }
+            if (xTaskCreate(ca_tcp_listener_task, "CA_TCP", 768, NULL, configMAX_PRIORITIES - 1, NULL) != pdPASS) {
+                printf("[ERR] xTaskCreate CA_TCP failed\n");
+            }
+
+            g_network_tasks_started = true;
+            printf("[INFO] Network tasks started\n");
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+}
+
 int main(void)
 {
     stdio_init_all();
-
-    if (cyw43_arch_init()) {
-        printf("[ERR] Wi-Fi init failed\n");
-        return -1;
-    }
-    cyw43_arch_enable_sta_mode();
-
-    printf("[INFO] Connecting to Wi-Fi: %s\n", WIFI_SSID);
-    if (cyw43_arch_wifi_connect_timeout_ms(
-            WIFI_SSID, WIFI_PASSWORD,
-            CYW43_AUTH_WPA2_AES_PSK, 30000)) {
-        printf("[ERR] Wi-Fi connect failed\n");
-        return -1;
-    }
-
-    set_static_ip();
-    printf("[INFO] Connected. Fixed IP: %s\n", STATIC_IP);
+    sleep_ms(1200);
+    printf("[INFO] Booting pico2w_epics_ioc...\n");
 
     pvdb_init();
     printf("[INFO] PV database initialized (%d PVs)\n", pvdb_count());
 
-    xTaskCreate(gpio_control_task,   "GPIO_CTRL",  512, NULL, 2, NULL);
-    xTaskCreate(http_server_task,    "HTTP",      1024, NULL, 2, NULL);
-    xTaskCreate(ca_udp_task,         "CA_UDP",     768, NULL, configMAX_PRIORITIES - 1, NULL);
-    xTaskCreate(ca_tcp_listener_task,"CA_TCP",     768, NULL, configMAX_PRIORITIES - 1, NULL);
+    if (xTaskCreate(gpio_control_task, "GPIO_CTRL", 512, NULL, 2, NULL) != pdPASS) {
+        printf("[ERR] xTaskCreate GPIO_CTRL failed\n");
+    }
+    if (xTaskCreate(network_manager_task, "NET_MGR", 1024, NULL, 3, NULL) != pdPASS) {
+        printf("[ERR] xTaskCreate NET_MGR failed\n");
+    }
 
     vTaskStartScheduler();
 
-    while (1) {}
+    while (1) {
+        tight_loop_contents();
+    }
     return 0;
 }
 

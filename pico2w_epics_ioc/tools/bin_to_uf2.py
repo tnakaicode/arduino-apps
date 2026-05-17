@@ -16,19 +16,54 @@ UF2_MAGIC_START0 = 0x0A324655
 UF2_MAGIC_START1 = 0x9E5D5157
 UF2_MAGIC_END = 0x0AB16F30
 UF2_FLAG_FAMILY_ID_PRESENT = 0x00002000
+UF2_FLAG_EXTENSION_FLAGS_PRESENT = 0x00008000
 
 # From pico-sdk boot/uf2.h
+RP2040_FAMILY_ID = 0xE48BFF56
+ABSOLUTE_FAMILY_ID = 0xE48BFF57
 RP2350_ARM_S_FAMILY_ID = 0xE48BFF59
+UF2_EXTENSION_RP2_IGNORE_BLOCK = 0x9957E304
 
 PAYLOAD_SIZE = 256
 BLOCK_SIZE = 512
+DEFAULT_ABS_BLOCK_LOC = 0x10FFFF00
 
 
-def convert_bin_to_uf2(input_path: Path, output_path: Path, base_addr: int, family_id: int) -> None:
+def _make_abs_block(abs_block_loc: int) -> bytes:
+    header = struct.pack(
+        "<IIIIIIII",
+        UF2_MAGIC_START0,
+        UF2_MAGIC_START1,
+        UF2_FLAG_FAMILY_ID_PRESENT | UF2_FLAG_EXTENSION_FLAGS_PRESENT,
+        abs_block_loc,
+        PAYLOAD_SIZE,
+        0,
+        2,
+        ABSOLUTE_FAMILY_ID,
+    )
+
+    data_area = bytearray(b"\x00" * 476)
+    data_area[:PAYLOAD_SIZE] = b"\xEF" * PAYLOAD_SIZE
+    # First extension slot starts right after the 256-byte payload region.
+    struct.pack_into("<I", data_area, PAYLOAD_SIZE, UF2_EXTENSION_RP2_IGNORE_BLOCK)
+    return header + bytes(data_area) + struct.pack("<I", UF2_MAGIC_END)
+
+
+def convert_bin_to_uf2(
+    input_path: Path,
+    output_path: Path,
+    base_addr: int,
+    family_id: int,
+    add_abs_block: bool,
+    abs_block_loc: int,
+) -> None:
     data = input_path.read_bytes()
     total_blocks = max(1, math.ceil(len(data) / PAYLOAD_SIZE))
 
     with output_path.open("wb") as f:
+        if add_abs_block and family_id not in (ABSOLUTE_FAMILY_ID, RP2040_FAMILY_ID):
+            f.write(_make_abs_block(abs_block_loc))
+
         for block_no in range(total_blocks):
             offset = block_no * PAYLOAD_SIZE
             payload = data[offset : offset + PAYLOAD_SIZE]
@@ -72,9 +107,27 @@ def main() -> int:
         default=RP2350_ARM_S_FAMILY_ID,
         help="UF2 family ID (default: RP2350 ARM S)",
     )
+    parser.add_argument(
+        "--no-abs-block",
+        action="store_true",
+        help="Disable RP2350 E10 absolute block insertion",
+    )
+    parser.add_argument(
+        "--abs-block-loc",
+        type=lambda x: int(x, 0),
+        default=DEFAULT_ABS_BLOCK_LOC,
+        help="Absolute block location (default: 0x10ffff00)",
+    )
     args = parser.parse_args()
 
-    convert_bin_to_uf2(args.input_bin, args.output_uf2, args.base_addr, args.family_id)
+    convert_bin_to_uf2(
+        args.input_bin,
+        args.output_uf2,
+        args.base_addr,
+        args.family_id,
+        add_abs_block=not args.no_abs_block,
+        abs_block_loc=args.abs_block_loc,
+    )
     return 0
 
 

@@ -21,15 +21,23 @@ project(pico2w_epics_ioc C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
+option(PICO2W_EPICS_SAFE_COM "Build pico2w_epics_ioc as USB+FreeRTOS minimal safe image" ON)
+
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 pico_sdk_init()
 
-add_executable(pico2w_epics_ioc
-    main.c
-    epics_ca.c
-    pv_database.c
-)
+if(PICO2W_EPICS_SAFE_COM)
+    add_executable(pico2w_epics_ioc
+        main.c
+    )
+else()
+    add_executable(pico2w_epics_ioc
+        main.c
+        epics_ca.c
+        pv_database.c
+    )
+endif()
 
 add_executable(pico2w_usb_diag
     usb_diag_main.c
@@ -40,14 +48,23 @@ add_executable(pico2w_freertos_usb_diag
 )
 
 # 必要なライブラリのリンク
-target_link_libraries(pico2w_epics_ioc
-    pico_stdlib
-    pico_cyw43_arch_lwip_sys_freertos  # FreeRTOS 上で動く lwIP (Wi-Fi) スタック
-    FreeRTOS-Kernel                    # FreeRTOS カーネル本体
-    FreeRTOS-Kernel-Heap4              # ヒープアロケータ (Heap4 = 分割・結合対応)
-    hardware_gpio
-    hardware_adc                       # 内部温度センサ読み取り用
-)
+if(PICO2W_EPICS_SAFE_COM)
+    target_link_libraries(pico2w_epics_ioc
+        pico_stdlib
+        FreeRTOS-Kernel
+        FreeRTOS-Kernel-Heap4
+        hardware_gpio
+    )
+else()
+    target_link_libraries(pico2w_epics_ioc
+        pico_stdlib
+        pico_cyw43_arch_lwip_sys_freertos  # FreeRTOS 上で動く lwIP (Wi-Fi) スタック
+        FreeRTOS-Kernel                    # FreeRTOS カーネル本体
+        FreeRTOS-Kernel-Heap4              # ヒープアロケータ (Heap4 = 分割・結合対応)
+        hardware_gpio
+        hardware_adc                       # 内部温度センサ読み取り用
+    )
+endif()
 
 target_link_libraries(pico2w_usb_diag
     pico_stdlib

@@ -13,7 +13,16 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#ifndef SAFE_COM_BRINGUP
+#define SAFE_COM_BRINGUP 0
+#endif
+
+#ifndef EPICS_MINIMAL_MODE
+#define EPICS_MINIMAL_MODE 1
+#endif
+
 #include "pico/stdlib.h"
+#if !SAFE_COM_BRINGUP
 #include "pico/cyw43_arch.h"
 
 #include "lwip/netif.h"
@@ -21,21 +30,27 @@
 #define LWIP_PROVIDE_ERRNO 1
 #include "lwip/sockets.h"
 #undef poll
+#endif
 
 #include "FreeRTOS.h"
 #include "task.h"
 
+#if !SAFE_COM_BRINGUP
 #include "epics_ca.h"
 #include "pv_database.h"
 #include "wifi_config.h"
+#endif
 
 #define GP15_PIN 15
 #define HTTP_PORT 80
+#define NETWORK_DEFER_MS 5000
 
 #define GPIO_TASK_STACK_WORDS   768
-#define NETMGR_TASK_STACK_WORDS 1536
-#define HTTP_TASK_STACK_WORDS   2048
-#define CA_TASK_STACK_WORDS     2048
+#define NETMGR_TASK_STACK_WORDS 4096
+#define HTTP_TASK_STACK_WORDS   3072
+#define CA_TASK_STACK_WORDS     3072
+#define NETBOOT_TASK_STACK_WORDS 768
+#define HEARTBEAT_TASK_STACK_WORDS 512
 
 /* 固定IP要件: 192.168.3.100 */
 #define STATIC_IP   "192.168.3.100"
@@ -51,6 +66,7 @@ typedef struct {
     uint32_t auth;
 } wifi_auth_try_t;
 
+#if !SAFE_COM_BRINGUP
 static const char *k_html_response =
     "HTTP/1.0 200 OK\r\n"
     "Content-Type: text/html\r\n\r\n"
@@ -89,11 +105,17 @@ static bool set_static_ip(void)
 
 static bool connect_wifi_with_fallback(void)
 {
+#if EPICS_MINIMAL_MODE
+    static const wifi_auth_try_t k_auth_tries[] = {
+        {"WPA2_AES_PSK", CYW43_AUTH_WPA2_AES_PSK},
+    };
+#else
     static const wifi_auth_try_t k_auth_tries[] = {
         {"WPA2_AES_PSK", CYW43_AUTH_WPA2_AES_PSK},
         {"WPA2_MIXED_PSK", CYW43_AUTH_WPA2_MIXED_PSK},
         {"WPA_TKIP_PSK", CYW43_AUTH_WPA_TKIP_PSK},
     };
+#endif
 
     for (size_t i = 0; i < sizeof(k_auth_tries) / sizeof(k_auth_tries[0]); ++i) {
         int rc;
@@ -103,7 +125,7 @@ static bool connect_wifi_with_fallback(void)
             WIFI_SSID,
             WIFI_PASSWORD,
             k_auth_tries[i].auth,
-            15000);
+            4000);
         if (rc == 0) {
             return true;
         }
@@ -314,8 +336,8 @@ static void network_manager_task(void *params)
     while (1) {
         if (!g_cyw43_ready) {
             if (cyw43_arch_init()) {
-                printf("[WARN] Wi-Fi init failed; retry in 5s\n");
-                vTaskDelay(pdMS_TO_TICKS(5000));
+                printf("[WARN] Wi-Fi init failed; retry in 1s\n");
+                vTaskDelay(pdMS_TO_TICKS(1000));
                 continue;
             }
 
@@ -327,20 +349,20 @@ static void network_manager_task(void *params)
         if (!g_network_ready) {
             printf("[INFO] Connecting Wi-Fi: %s\n", WIFI_SSID);
             if (!connect_wifi_with_fallback()) {
-                printf("[WARN] Wi-Fi connect failed; retry in 3s\n");
-                vTaskDelay(pdMS_TO_TICKS(3000));
+                printf("[WARN] Wi-Fi connect failed; retry in 1s\n");
+                vTaskDelay(pdMS_TO_TICKS(1000));
                 continue;
             }
 
             if (!wait_for_netif_ready(5000)) {
-                printf("[WARN] netif not ready; retry in 3s\n");
-                vTaskDelay(pdMS_TO_TICKS(3000));
+                printf("[WARN] netif not ready; retry in 1s\n");
+                vTaskDelay(pdMS_TO_TICKS(1000));
                 continue;
             }
 
             if (!set_static_ip()) {
-                printf("[WARN] static IP apply failed; retry in 3s\n");
-                vTaskDelay(pdMS_TO_TICKS(3000));
+                printf("[WARN] static IP apply failed; retry in 1s\n");
+                vTaskDelay(pdMS_TO_TICKS(1000));
                 continue;
             }
 
@@ -349,9 +371,13 @@ static void network_manager_task(void *params)
         }
 
         if (!g_network_tasks_started) {
+#if !EPICS_MINIMAL_MODE
             if (xTaskCreate(http_server_task, "HTTP", HTTP_TASK_STACK_WORDS, NULL, 2, NULL) != pdPASS) {
                 printf("[ERR] xTaskCreate HTTP failed\n");
             }
+#else
+            printf("[INFO] EPICS minimal mode: HTTP disabled\n");
+#endif
             if (xTaskCreate(ca_udp_task, "CA_UDP", CA_TASK_STACK_WORDS, NULL, configMAX_PRIORITIES - 1, NULL) != pdPASS) {
                 printf("[ERR] xTaskCreate CA_UDP failed\n");
             }
@@ -367,27 +393,75 @@ static void network_manager_task(void *params)
     }
 }
 
+static void delayed_network_boot_task(void *params)
+{
+    (void)params;
+
+    printf("[INFO] Network boot deferred %d ms for USB stability\n", NETWORK_DEFER_MS);
+    vTaskDelay(pdMS_TO_TICKS(NETWORK_DEFER_MS));
+
+    if (xTaskCreate(network_manager_task, "NET_MGR", NETMGR_TASK_STACK_WORDS, NULL, 3, NULL) != pdPASS) {
+        printf("[ERR] xTaskCreate NET_MGR failed\n");
+    } else {
+        printf("[INFO] NET_MGR task started\n");
+    }
+
+    vTaskDelete(NULL);
+}
+#endif
+
+static void heartbeat_task(void *params)
+{
+    (void)params;
+
+    while (1) {
+        printf("[HB] alive, net=%d cyw43=%d\n", g_network_ready ? 1 : 0, g_cyw43_ready ? 1 : 0);
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+}
+
 int main(void)
 {
     stdio_init_all();
-    sleep_ms(1500);
-    printf("[INFO] Booting pico2w_epics_ioc...\n");
+    setvbuf(stdout, NULL, _IONBF, 0);
+    setvbuf(stderr, NULL, _IONBF, 0);
 
-    // Keep startup simple for a few seconds so USB CDC can enumerate first.
-    for (int i = 0; i < 30; ++i) {
-        sleep_ms(100);
-    }
+    printf("[INFO] Booting pico2w_epics_ioc...\n");
     printf("[INFO] Starting RTOS tasks...\n");
 
+#if SAFE_COM_BRINGUP
+    printf("[INFO] SAFE_COM_BRINGUP active (network disabled)\n");
+
+    if (xTaskCreate(heartbeat_task, "HEARTBEAT", HEARTBEAT_TASK_STACK_WORDS, NULL, 1, NULL) != pdPASS) {
+        printf("[ERR] xTaskCreate HEARTBEAT failed\n");
+    }
+
+    vTaskStartScheduler();
+
+    while (1) {
+        tight_loop_contents();
+    }
+    return 0;
+#endif
+
+#if !SAFE_COM_BRINGUP
     pvdb_init();
     printf("[INFO] PV database initialized (%d PVs)\n", pvdb_count());
 
+#if !EPICS_MINIMAL_MODE
     if (xTaskCreate(gpio_control_task, "GPIO_CTRL", GPIO_TASK_STACK_WORDS, NULL, 2, NULL) != pdPASS) {
         printf("[ERR] xTaskCreate GPIO_CTRL failed\n");
     }
-    if (xTaskCreate(network_manager_task, "NET_MGR", NETMGR_TASK_STACK_WORDS, NULL, 3, NULL) != pdPASS) {
-        printf("[ERR] xTaskCreate NET_MGR failed\n");
+#else
+    printf("[INFO] EPICS minimal mode: GPIO task disabled\n");
+#endif
+    if (xTaskCreate(heartbeat_task, "HEARTBEAT", HEARTBEAT_TASK_STACK_WORDS, NULL, 1, NULL) != pdPASS) {
+        printf("[ERR] xTaskCreate HEARTBEAT failed\n");
     }
+    if (xTaskCreate(delayed_network_boot_task, "NET_BOOT", NETBOOT_TASK_STACK_WORDS, NULL, 3, NULL) != pdPASS) {
+        printf("[ERR] xTaskCreate NET_BOOT failed\n");
+    }
+#endif
 
     vTaskStartScheduler();
 

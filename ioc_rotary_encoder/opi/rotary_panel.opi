@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<display version="2.0.0">
+  <name>Rotary Motor Panel</name>
+  <x>0</x>
+  <y>0</y>
+  <width>980</width>
+  <height>620</height>
+  <background_color>
+    <color red="240" green="240" blue="240"/>
+  </background_color>
+  <foreground_color>
+    <color red="0" green="0" blue="0"/>
+  </foreground_color>
+  <font>
+    <fontdata fontName="Liberation Sans" height="12" style="0"/>
+  </font>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>title</name>
+    <text>Rotary Encoder + Motor Control</text>
+    <x>20</x><y>12</y><width>420</width><height>28</height>
+    <font><fontdata fontName="Liberation Sans" height="16" style="1"/></font>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>enc_hdr</name><text>Encoder Monitor</text>
+    <x>20</x><y>56</y><width>220</width><height>24</height>
+    <font><fontdata fontName="Liberation Sans" height="14" style="1"/></font>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>enc1_lbl</name><text>ENC1:POSITION</text>
+    <x>20</x><y>90</y><width>140</width><height>22</height>
+  </widget>
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <name>enc1_val</name><pv_name>RE:ch0:ENC1:POSITION</pv_name>
+    <x>170</x><y>88</y><width>140</width><height>24</height>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>enc2_lbl</name><text>ENC2:POSITION</text>
+    <x>20</x><y>124</y><width>140</width><height>22</height>
+  </widget>
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <name>enc2_val</name><pv_name>RE:ch0:ENC2:POSITION</pv_name>
+    <x>170</x><y>122</y><width>140</width><height>24</height>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>motor_hdr</name><text>Motor 1</text>
+    <x>20</x><y>180</y><width>120</width><height>24</height>
+    <font><fontdata fontName="Liberation Sans" height="14" style="1"/></font>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>m1_pos_lbl</name><text>MTR1:POSITION</text>
+    <x>20</x><y>214</y><width>140</width><height>22</height>
+  </widget>
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <name>m1_pos_val</name><pv_name>RE:ch0:MTR1:POSITION</pv_name>
+    <x>170</x><y>212</y><width>140</width><height>24</height>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>m1_set_lbl</name><text>MTR1:SETPOINT</text>
+    <x>20</x><y>248</y><width>140</width><height>22</height>
+  </widget>
+  <widget typeId="org.csstudio.opibuilder.widgets.TextInput" version="1.0.0">
+    <name>m1_set_in</name><pv_name>RE:ch0:MTR1:SETPOINT</pv_name>
+    <x>170</x><y>246</y><width>140</width><height>24</height>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>m1_rpm_set_lbl</name><text>MTR1:RPM_SET</text>
+    <x>20</x><y>282</y><width>140</width><height>22</height>
+  </widget>
+  <widget typeId="org.csstudio.opibuilder.widgets.TextInput" version="1.0.0">
+    <name>m1_rpm_set_in</name><pv_name>RE:ch0:MTR1:RPM_SET</pv_name>
+    <x>170</x><y>280</y><width>140</width><height>24</height>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>m1_rpm_fb_lbl</name><text>MTR1:RPM_FB</text>
+    <x>20</x><y>316</y><width>140</width><height>22</height>
+  </widget>
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <name>m1_rpm_fb_val</name><pv_name>RE:ch0:MTR1:RPM_FB</pv_name>
+    <x>170</x><y>314</y><width>140</width><height>24</height>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>motor2_hdr</name><text>Motor 2</text>
+    <x>360</x><y>180</y><width>120</width><height>24</height>
+    <font><fontdata fontName="Liberation Sans" height="14" style="1"/></font>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>m2_pos_lbl</name><text>MTR2:POSITION</text>
+    <x>360</x><y>214</y><width>140</width><height>22</height>
+  </widget>
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <name>m2_pos_val</name><pv_name>RE:ch0:MTR2:POSITION</pv_name>
+    <x>510</x><y>212</y><width>140</width><height>24</height>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>m2_set_lbl</name><text>MTR2:SETPOINT</text>
+    <x>360</x><y>248</y><width>140</width><height>22</height>
+  </widget>
+  <widget typeId="org.csstudio.opibuilder.widgets.TextInput" version="1.0.0">
+    <name>m2_set_in</name><pv_name>RE:ch0:MTR2:SETPOINT</pv_name>
+    <x>510</x><y>246</y><width>140</width><height>24</height>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>m2_rpm_set_lbl</name><text>MTR2:RPM_SET</text>
+    <x>360</x><y>282</y><width>140</width><height>22</height>
+  </widget>
+  <widget typeId="org.csstudio.opibuilder.widgets.TextInput" version="1.0.0">
+    <name>m2_rpm_set_in</name><pv_name>RE:ch0:MTR2:RPM_SET</pv_name>
+    <x>510</x><y>280</y><width>140</width><height>24</height>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>m2_rpm_fb_lbl</name><text>MTR2:RPM_FB</text>
+    <x>360</x><y>316</y><width>140</width><height>22</height>
+  </widget>
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <name>m2_rpm_fb_val</name><pv_name>RE:ch0:MTR2:RPM_FB</pv_name>
+    <x>510</x><y>314</y><width>140</width><height>24</height>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>light_hdr</name><text>Light Monitor</text>
+    <x>20</x><y>384</y><width>200</width><height>24</height>
+    <font><fontdata fontName="Liberation Sans" height="14" style="1"/></font>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>light_lbl</name><text>ARDUINO:LIGHT_RAW</text>
+    <x>20</x><y>418</y><width>160</width><height>22</height>
+  </widget>
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <name>light_val</name><pv_name>RE:ch0:ARDUINO:LIGHT_RAW</pv_name>
+    <x>190</x><y>416</y><width>140</width><height>24</height>
+  </widget>
+
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>conn_lbl</name><text>ARDUINO:CONNECTED</text>
+    <x>360</x><y>418</y><width>160</width><height>22</height>
+  </widget>
+  <widget typeId="org.csstudio.opibuilder.widgets.TextUpdate" version="1.0.0">
+    <name>conn_val</name><pv_name>RE:ch0:ARDUINO:CONNECTED</pv_name>
+    <x>530</x><y>416</y><width>120</width><height>24</height>
+  </widget>
+</display>

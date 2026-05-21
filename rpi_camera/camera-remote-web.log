@@ -184,3 +184,57 @@ ModuleNotFoundError: No module named 'cv2'
 ======== Running on http://0.0.0.0:5000 ========
 (Press CTRL+C to quit)
 [ WARN:0@0.443] global cap.cpp:215 open VIDEOIO(V4L2): backend is generally available but can't be used to capture by name
+Error handling request from 192.168.3.98
+Traceback (most recent call last):
+  File "/usr/lib/python3.11/asyncio/selector_events.py", line 995, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/aiohttp/web_protocol.py", line 517, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/aiohttp/web_app.py", line 569, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/rpi_camera/camera_remote_web.py", line 1157, in stream
+    await response.write(encoded.tobytes())
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/aiohttp/web_response.py", line 560, in write
+    await self._payload_writer.write(data)
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/aiohttp/http_writer.py", line 208, in write
+    await self.drain()
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/aiohttp/http_writer.py", line 351, in drain
+    await protocol._drain_helper()
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/aiohttp/base_protocol.py", line 100, in _drain_helper
+    await asyncio.shield(waiter)
+ConnectionError: Connection lost
+Error handling request from 192.168.3.98
+Traceback (most recent call last):
+  File "/usr/lib/python3.11/asyncio/selector_events.py", line 995, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ConnectionResetError: [Errno 104] Connection reset by peer
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/aiohttp/web_protocol.py", line 517, in _handle_request
+    resp = await request_handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/aiohttp/web_app.py", line 569, in _handle
+    return await handler(request)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/rpi_camera/camera_remote_web.py", line 1157, in stream
+    await response.write(encoded.tobytes())
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/aiohttp/web_response.py", line 560, in write
+    await self._payload_writer.write(data)
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/aiohttp/http_writer.py", line 208, in write
+    await self.drain()
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/aiohttp/http_writer.py", line 351, in drain
+    await protocol._drain_helper()
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/aiohttp/base_protocol.py", line 100, in _drain_helper
+    await asyncio.shield(waiter)
+ConnectionError: Connection lost

@@ -15,6 +15,7 @@ dbLoadDatabase "dbd/RotaryEncoder.dbd"
 RotaryEncoder_registerRecordDeviceDriver pdbbase
 
 dbLoadRecords "db/RotaryEncoder.db", "P=$(P),R=$(R)"
+dbl > pvlist.txt
 
 cd "${TOP}/iocBoot/${IOC}"
 

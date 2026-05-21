@@ -15,6 +15,7 @@ const int ENC1_CLK_PIN = 12; // magenta
 const int ENC2_SW_PIN  = A0; // 14
 const int ENC2_DT_PIN  = A1; // 15
 const int ENC2_CLK_PIN = A2; // 16
+const int LIGHT_SENSOR_PIN = A3; // 17
 
 // =========================
 // Bipolar stepper motor #1 pins
@@ -87,6 +88,7 @@ unsigned long loopPeriodUs = 0;
 unsigned long loopRateWindowStartMs = 0;
 unsigned long loopRateWindowCount = 0;
 long loopRateHz = 0;
+int lightRaw = 0;
 
 String serialCmdBuf;
 
@@ -230,6 +232,7 @@ void setup()
     pinMode(ENC2_SW_PIN,  INPUT_PULLUP);
     pinMode(ENC2_DT_PIN,  INPUT_PULLUP);
     pinMode(ENC2_CLK_PIN, INPUT_PULLUP);
+    pinMode(LIGHT_SENSOR_PIN, INPUT);
 
     motor1.setMaxSpeed(900);
     motor1.setAcceleration(1200);
@@ -385,6 +388,8 @@ void loop()
 
     pollSerialCommands();
 
+    lightRaw = analogRead(LIGHT_SENSOR_PIN);
+
     handleEncoder1();
     handleEncoder2();
     handleSwitch1();
@@ -409,7 +414,7 @@ void outputEpicsData()
         lastEpicsUpdate = now;
         
         // Format:
-        // ENC1:value,ENC2:value,MTR1:value,MTR2:value,SYNC:value,RPM1:value,RPM2:value,LOOP_HZ:value,LOOP_MS:value,LOOP_US:value,UPTIME_MS:value
+        // ENC1:value,ENC2:value,MTR1:value,MTR2:value,SYNC:value,RPM1:value,RPM2:value,LIGHT_RAW:value,LOOP_HZ:value,LOOP_MS:value,LOOP_US:value,UPTIME_MS:value
         Serial.print("ENC1:");
         Serial.print(enc1_clicks);
         Serial.print(",ENC2:");
@@ -424,6 +429,8 @@ void outputEpicsData()
         Serial.print(rpmCmd1);
         Serial.print(",RPM2:");
         Serial.print(rpmCmd2);
+        Serial.print(",LIGHT_RAW:");
+        Serial.print(lightRaw);
         Serial.print(",LOOP_HZ:");
         Serial.print(loopRateHz);
         Serial.print(",LOOP_MS:");

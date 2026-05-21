@@ -145,6 +145,13 @@ record(longin, "$(P)$(R)ARDUINO:LOOP_US")
     field(EGU, "us")
 }
 
+record(longin, "$(P)$(R)ARDUINO:LIGHT_RAW")
+{
+    field(DESC, "Light sensor raw ADC")
+    field(SCAN, "Passive")
+    field(EGU, "adc")
+}
+
 record(longin, "$(P)$(R)ARDUINO:UPTIME_MS")
 {
     field(DESC, "Arduino uptime reported by firmware")

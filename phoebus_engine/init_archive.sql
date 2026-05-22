@@ -9,11 +9,11 @@ USE archive;
 -- =========================
 -- USERS
 -- =========================
-CREATE USER IF NOT EXISTS 'archive'@'%' IDENTIFIED BY 'pass';
-CREATE USER IF NOT EXISTS 'report'@'%' IDENTIFIED BY 'pass';
+CREATE USER IF NOT EXISTS 'archive'@'192.168.3.%' IDENTIFIED BY 'pass';
+CREATE USER IF NOT EXISTS 'report'@'192.168.3.%' IDENTIFIED BY 'pass';
 
-GRANT ALL PRIVILEGES ON archive.* TO 'archive'@'%';
-GRANT SELECT ON archive.* TO 'report'@'%';
+GRANT ALL PRIVILEGES ON archive.* TO 'archive'@'192.168.3.%';
+GRANT SELECT ON archive.* TO 'report'@'192.168.3.%';
 
 FLUSH PRIVILEGES;
 

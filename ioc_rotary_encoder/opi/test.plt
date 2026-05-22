@@ -34,8 +34,8 @@
         <green>0</green>
         <blue>0</blue>
       </color>
-      <min>-47878.77341022114</min>
-      <max>13421.226589778864</max>
+      <min>-47900.0</min>
+      <max>17500.0</max>
       <grid>false</grid>
       <autoscale>false</autoscale>
       <log_scale>false</log_scale>
@@ -51,8 +51,8 @@
         <green>0</green>
         <blue>0</blue>
       </color>
-      <min>-191.89126623033087</min>
-      <max>79.10873376966912</max>
+      <min>-78.0</min>
+      <max>49.0</max>
       <grid>false</grid>
       <autoscale>false</autoscale>
       <log_scale>false</log_scale>
@@ -68,8 +68,8 @@
         <green>0</green>
         <blue>0</blue>
       </color>
-      <min>-19111.677146787188</min>
-      <max>34388.32285321281</max>
+      <min>-5800.0</min>
+      <max>5800.0</max>
       <grid>false</grid>
       <autoscale>false</autoscale>
       <log_scale>false</log_scale>
@@ -85,8 +85,8 @@
         <green>0</green>
         <blue>0</blue>
       </color>
-      <min>-21.76610940641202</min>
-      <max>158.23389059358797</max>
+      <min>-24.0</min>
+      <max>156.0</max>
       <grid>false</grid>
       <autoscale>false</autoscale>
       <log_scale>false</log_scale>
@@ -102,8 +102,8 @@
         <green>0</green>
         <blue>0</blue>
       </color>
-      <min>177.8679504814305</min>
-      <max>1227.8679504814304</max>
+      <min>250.0</min>
+      <max>3120.0</max>
       <grid>false</grid>
       <autoscale>false</autoscale>
       <log_scale>false</log_scale>
@@ -131,6 +131,11 @@
       <period>0.1</period>
       <ring_size>50000</ring_size>
       <request>OPTIMIZED</request>
+      <archive>
+        <name>RDB</name>
+        <url>jdbc:mysql://192.168.3.95:3306/archive</url>
+        <key>1</key>
+      </archive>
     </pv>
     <pv>
       <display_name>RE:ch0:ENC1:POSITION</display_name>
@@ -151,6 +156,11 @@
       <period>0.0</period>
       <ring_size>50000</ring_size>
       <request>OPTIMIZED</request>
+      <archive>
+        <name>RDB</name>
+        <url>jdbc:mysql://192.168.3.95:3306/archive</url>
+        <key>1</key>
+      </archive>
     </pv>
     <pv>
       <display_name>RE:ch0:ENC2:POSITION</display_name>
@@ -171,6 +181,11 @@
       <period>0.0</period>
       <ring_size>5000</ring_size>
       <request>OPTIMIZED</request>
+      <archive>
+        <name>RDB</name>
+        <url>jdbc:mysql://192.168.3.95:3306/archive</url>
+        <key>1</key>
+      </archive>
     </pv>
     <pv>
       <display_name>RE:ch0:MTR1:POSITION</display_name>
@@ -191,6 +206,11 @@
       <period>0.0</period>
       <ring_size>50000</ring_size>
       <request>OPTIMIZED</request>
+      <archive>
+        <name>RDB</name>
+        <url>jdbc:mysql://192.168.3.95:3306/archive</url>
+        <key>1</key>
+      </archive>
     </pv>
     <pv>
       <display_name>RE:ch0:MTR1:SETPOINT</display_name>
@@ -211,6 +231,11 @@
       <period>0.0</period>
       <ring_size>50000</ring_size>
       <request>OPTIMIZED</request>
+      <archive>
+        <name>RDB</name>
+        <url>jdbc:mysql://192.168.3.95:3306/archive</url>
+        <key>1</key>
+      </archive>
     </pv>
     <pv>
       <display_name>RE:ch0:MTR2:SETPOINT</display_name>
@@ -231,6 +256,11 @@
       <period>0.0</period>
       <ring_size>5000</ring_size>
       <request>OPTIMIZED</request>
+      <archive>
+        <name>RDB</name>
+        <url>jdbc:mysql://192.168.3.95:3306/archive</url>
+        <key>1</key>
+      </archive>
     </pv>
     <pv>
       <display_name>RE:ch0:MTR1:POSITION</display_name>
@@ -251,6 +281,11 @@
       <period>0.0</period>
       <ring_size>5000</ring_size>
       <request>OPTIMIZED</request>
+      <archive>
+        <name>RDB</name>
+        <url>jdbc:mysql://192.168.3.95:3306/archive</url>
+        <key>1</key>
+      </archive>
     </pv>
     <pv>
       <display_name>RE:ch0:MTR1:RPM_SET</display_name>
@@ -271,6 +306,11 @@
       <period>0.0</period>
       <ring_size>50000</ring_size>
       <request>OPTIMIZED</request>
+      <archive>
+        <name>RDB</name>
+        <url>jdbc:mysql://192.168.3.95:3306/archive</url>
+        <key>1</key>
+      </archive>
     </pv>
     <pv>
       <display_name>RE:ch0:MTR2:RPM_SET</display_name>
@@ -291,6 +331,11 @@
       <period>0.0</period>
       <ring_size>5000</ring_size>
       <request>OPTIMIZED</request>
+      <archive>
+        <name>RDB</name>
+        <url>jdbc:mysql://192.168.3.95:3306/archive</url>
+        <key>1</key>
+      </archive>
     </pv>
     <pv>
       <display_name>RE:ch0:ARDUINO:LIGHT_RAW</display_name>
@@ -311,6 +356,11 @@
       <period>0.0</period>
       <ring_size>50000</ring_size>
       <request>OPTIMIZED</request>
+      <archive>
+        <name>RDB</name>
+        <url>jdbc:mysql://192.168.3.95:3306/archive</url>
+        <key>1</key>
+      </archive>
     </pv>
   </pvlist>
 </databrowser>

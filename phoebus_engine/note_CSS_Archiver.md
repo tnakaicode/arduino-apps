@@ -137,7 +137,7 @@ FLUSH PRIVILEGES;
 PowerShell は `< file.sql` のリダイレクトが使えないため、**標準入力へパイプ**で流し込む。  
 
 ```powershell
-Get-Content -Raw .\MySQL8.dbd |
+Get-Content -Raw init_archive.sql |
   & "C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe" -h 127.0.0.1 -P 3306 -u root -p 2>&1
 
 ```
@@ -186,7 +186,8 @@ java -jar .\service-archive-engine-4.7.4-SNAPSHOT.jar `
 java -jar .\service-archive-engine-4.7.4-SNAPSHOT.jar `
   -settings .\engine_settings.ini `
   -import .\engineconfig.xml `
-  -engine Main
+  -engine Main `
+  -replace_engine
 ```
 
 ### 6.3 実行
@@ -194,21 +195,41 @@ java -jar .\service-archive-engine-4.7.4-SNAPSHOT.jar `
 ```powershell
 java -jar .\service-archive-engine-4.7.4-SNAPSHOT.jar `
   -settings .\engine_settings.ini `
-  -import .\engineconfig.xml `
-  -engine Main `
-  -replace_engine
+  -engine Main
 ```
 
 ```powershell
 & "C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe" -h 127.0.0.1 -P 3306 -u root -p
 & "C:\Program Files\MySQL\MySQL Server 8.4\bin\mysql.exe" -h 127.0.0.1 -P 3306 -u report -p 
 
-
 & "C:\Program Files\MySQL\MySQL Server 8.4\bin\mysqldump.exe" `
   -u root -p --no-data archive > archive_full.sql
 ```
 
 ```powershell
+nssm install PhoebusArchiveEngine
+
+nssm dump PhoebusArchiveEngine
+
+# --- 設定の事前準備 (実際のフォルダパスに書き換えてください) ---
+$JavaPath = "C:\Program Files\Eclipse Adoptium\jdk-21.0.9.10-hotspot\bin\java.exe"
+
+# 一旦、設定がズレている既存のサービスを完全に削除して綺麗にします
+nssm remove PhoebusArchiveEngine confirm
+
+# 1. 新しくサービスをインストール
+nssm install PhoebusArchiveEngine "$JavaPath"
+
+# 2. 作業ディレクトリを JAR ファイルのある場所に変更
+nssm set PhoebusArchiveEngine AppDirectory "C:\Users\tnakai\archive-engine-4.7.4-SNAPSHOT"
+
+# 3. 引数（Arguments）を正しくセット
+nssm set PhoebusArchiveEngine AppParameters "-jar .\service-archive-engine-4.7.4-SNAPSHOT.jar -settings .\engine_settings.ini -engine Main"
+
+# 4. スタートアップを「自動」に設定
+nssm set PhoebusArchiveEngine Start SERVICE_AUTO_START
+nssm set PhoebusArchiveEngine DependOnService MySQL84
+
 nssm restart PhoebusArchiveEngine
 ```
 

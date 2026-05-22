@@ -119,7 +119,7 @@ CREATE TABLE enum_metadata (
 -- =========================
 -- ✅ IMPORTANT: disable strict SQL mode
 -- =========================
-SET GLOBAL sql_mode='';
+SET SESSION sql_mode='';
 
 -- =========================
 -- AUTO DELETE (1 day)

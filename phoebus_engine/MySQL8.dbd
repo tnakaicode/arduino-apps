@@ -1,0 +1,99 @@
+DROP DATABASE IF EXISTS archive;
+CREATE DATABASE archive;
+USE archive;
+
+-- USER
+CREATE USER IF NOT EXISTS 'archive'@'%' IDENTIFIED BY 'pass';
+CREATE USER IF NOT EXISTS 'report'@'%' IDENTIFIED BY 'pass';
+GRANT ALL PRIVILEGES ON archive.* TO 'archive'@'%';
+GRANT SELECT ON archive.* TO 'report'@'%';
+FLUSH PRIVILEGES;
+
+-- ENGINE
+CREATE TABLE smpl_eng (
+   eng_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+   name VARCHAR(100),
+   descr VARCHAR(100),
+   url VARCHAR(100)
+);
+INSERT INTO smpl_eng VALUES (1,'Main','Archive Engine','http://localhost:4812/main');
+
+-- GROUP（※ grp_id が必須）
+CREATE TABLE chan_grp (
+   grp_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+   name VARCHAR(100),
+   eng_id INT UNSIGNED,
+   descr VARCHAR(100),
+   enabling_chan_id INT UNSIGNED
+);
+INSERT INTO chan_grp VALUES (1,'Main',1,'Group',NULL);
+
+-- MODE
+CREATE TABLE smpl_mode (
+   smpl_mode_id INT UNSIGNED PRIMARY KEY,
+   name VARCHAR(100),
+   descr VARCHAR(100)
+);
+INSERT INTO smpl_mode VALUES
+(1,'Monitor','Store updates'),
+(2,'Scan','Periodic');
+
+-- CHANNEL（※ grp_id 必須）
+CREATE TABLE channel (
+   channel_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+   name VARCHAR(100) NOT NULL,
+   grp_id INT UNSIGNED,
+   smpl_mode_id INT UNSIGNED,
+   smpl_val DOUBLE,
+   smpl_per DOUBLE,
+   UNIQUE KEY channel_name_idx(name)
+);
+
+-- SEVERITY
+CREATE TABLE severity (
+   severity_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+   name VARCHAR(100)
+);
+INSERT INTO severity VALUES
+(1,'OK'),(2,'MINOR'),(3,'MAJOR'),(4,'INVALID');
+
+-- STATUS
+CREATE TABLE status (
+   status_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+   name VARCHAR(100) UNIQUE
+);
+INSERT INTO status VALUES
+(1,'OK'),(2,'disconnected');
+
+-- SAMPLE（シンプルでOK）
+CREATE TABLE sample (
+   channel_id INT UNSIGNED NOT NULL,
+   smpl_time TIMESTAMP NOT NULL,
+   nanosecs INT UNSIGNED NOT NULL,
+   severity_id INT UNSIGNED NOT NULL,
+   status_id INT UNSIGNED NOT NULL,
+   num_val INT,
+   float_val DOUBLE,
+   str_val VARCHAR(120),
+
+   KEY idx_sample (channel_id, smpl_time, nanosecs)
+);
+
+-- ✅ 重要：完全版 metadata（これが今回必須）
+CREATE TABLE num_metadata (
+   channel_id INT UNSIGNED PRIMARY KEY,
+   low_disp_rng DOUBLE,
+   high_disp_rng DOUBLE,
+   low_warn_lmt DOUBLE,
+   high_warn_lmt DOUBLE,
+   low_alarm_lmt DOUBLE,
+   high_alarm_lmt DOUBLE,
+   prec INT,
+   unit VARCHAR(100)
+);
+
+CREATE TABLE enum_metadata (
+   channel_id INT UNSIGNED,
+   enum_nbr INT,
+   enum_val VARCHAR(120)
+);

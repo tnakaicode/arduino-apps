@@ -171,5 +171,5 @@ loginctl show-user rpi -p Linger
 
 systemctl --user is-enabled rotary-ioc.service; systemctl --user is-active rotary-ioc.service
 
-
+systemctl --user status rotary-ioc.service
 ```

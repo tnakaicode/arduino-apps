@@ -250,6 +250,7 @@ void serialReaderThread(void *arg)
     const std::string loopMsPv = cfg->pvPrefix + "ARDUINO:LOOP_MS";
     const std::string loopUsPv = cfg->pvPrefix + "ARDUINO:LOOP_US";
     const std::string lightRawPv = cfg->pvPrefix + "ARDUINO:LIGHT_RAW";
+    const std::string thermistorPv = cfg->pvPrefix + "ARDUINO:THERMISTOR";
     const std::string uptimeMsPv = cfg->pvPrefix + "ARDUINO:UPTIME_MS";
 
     const speed_t baud = parseBaud(cfg->baudRate.c_str());
@@ -279,6 +280,7 @@ void serialReaderThread(void *arg)
     putLongPV(loopMsPv, 0);
     putLongPV(loopUsPv, 0);
     putLongPV(lightRawPv, 0);
+    putLongPV(thermistorPv, 0);
     putLongPV(uptimeMsPv, 0);
     putLongPV(mtr1RpmFbPv, 0);
     putLongPV(mtr2RpmFbPv, 0);
@@ -479,6 +481,10 @@ void serialReaderThread(void *arg)
                 long lightRaw = 0;
                 if (extractTaggedLong(line, ",LIGHT_RAW:", &lightRaw)) {
                     putLongPV(lightRawPv, lightRaw);
+                }
+                long thermistorRaw = 0;
+                if (extractTaggedLong(line, ",THERMISTOR:", &thermistorRaw)) {
+                    putLongPV(thermistorPv, thermistorRaw);
                 }
                 if (extractTaggedLong(line, ",UPTIME_MS:", &uptimeMs)) {
                     putLongPV(uptimeMsPv, uptimeMs);

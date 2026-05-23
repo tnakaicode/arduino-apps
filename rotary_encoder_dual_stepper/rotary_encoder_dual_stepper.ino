@@ -16,6 +16,7 @@ const int ENC2_SW_PIN  = A0; // 14
 const int ENC2_DT_PIN  = A1; // 15
 const int ENC2_CLK_PIN = A2; // 16
 const int LIGHT_SENSOR_PIN = A3; // 17
+const int THERMISTOR_PIN = A4; // 18
 
 // =========================
 // Bipolar stepper motor #1 pins
@@ -89,6 +90,7 @@ unsigned long loopRateWindowStartMs = 0;
 unsigned long loopRateWindowCount = 0;
 long loopRateHz = 0;
 int lightRaw = 0;
+int thermistorRaw = 0;
 
 String serialCmdBuf;
 
@@ -233,6 +235,7 @@ void setup()
     pinMode(ENC2_DT_PIN,  INPUT_PULLUP);
     pinMode(ENC2_CLK_PIN, INPUT_PULLUP);
     pinMode(LIGHT_SENSOR_PIN, INPUT);
+    pinMode(THERMISTOR_PIN, INPUT);
 
     motor1.setMaxSpeed(900);
     motor1.setAcceleration(1200);
@@ -389,6 +392,7 @@ void loop()
     pollSerialCommands();
 
     lightRaw = analogRead(LIGHT_SENSOR_PIN);
+    thermistorRaw = analogRead(THERMISTOR_PIN);
 
     handleEncoder1();
     handleEncoder2();
@@ -431,6 +435,8 @@ void outputEpicsData()
         Serial.print(rpmCmd2);
         Serial.print(",LIGHT_RAW:");
         Serial.print(lightRaw);
+        Serial.print(",THERMISTOR:");
+        Serial.print(thermistorRaw);
         Serial.print(",LOOP_HZ:");
         Serial.print(loopRateHz);
         Serial.print(",LOOP_MS:");

@@ -255,7 +255,7 @@
     <name>light_val</name>
     <pv_name>RE:ch0:ARDUINO:LIGHT_RAW</pv_name>
     <x>190</x>
-    <y>416</y>
+    <y>418</y>
     <width>140</width>
     <height>24</height>
   </widget>
@@ -272,7 +272,7 @@
     <name>conn_val</name>
     <pv_name>RE:ch0:ARDUINO:CONNECTED</pv_name>
     <x>530</x>
-    <y>416</y>
+    <y>418</y>
     <width>120</width>
     <height>24</height>
   </widget>
@@ -284,5 +284,22 @@
     <width>1190</width>
     <height>808</height>
     <show_toolbar>true</show_toolbar>
+  </widget>
+  <widget type="label" version="2.0.0">
+    <name>light_lbl_1</name>
+    <text>ARDUINO:THERMISTOR</text>
+    <x>20</x>
+    <y>490</y>
+    <width>160</width>
+    <height>22</height>
+    <vertical_alignment>1</vertical_alignment>
+  </widget>
+  <widget type="textupdate" version="2.0.0">
+    <name>light_val_1</name>
+    <pv_name>RE:ch0:ARDUINO:THERMISTOR</pv_name>
+    <x>190</x>
+    <y>490</y>
+    <width>140</width>
+    <height>24</height>
   </widget>
 </display>

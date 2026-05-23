@@ -5,7 +5,7 @@
   <update_period>3.0</update_period>
   <scroll_step>5</scroll_step>
   <scroll>true</scroll>
-  <start>-1 hours -5 minutes -42 seconds</start>
+  <start>-2 days -10 hours -54 minutes -56.399 seconds</start>
   <end>now</end>
   <archive_rescale>STAGGER</archive_rescale>
   <foreground>
@@ -34,8 +34,8 @@
         <green>0</green>
         <blue>0</blue>
       </color>
-      <min>-47900.0</min>
-      <max>17500.0</max>
+      <min>-70600.0</min>
+      <max>12800.0</max>
       <grid>false</grid>
       <autoscale>false</autoscale>
       <log_scale>false</log_scale>
@@ -51,8 +51,8 @@
         <green>0</green>
         <blue>0</blue>
       </color>
-      <min>-78.0</min>
-      <max>49.0</max>
+      <min>-697.0</min>
+      <max>239.0</max>
       <grid>false</grid>
       <autoscale>false</autoscale>
       <log_scale>false</log_scale>
@@ -68,8 +68,8 @@
         <green>0</green>
         <blue>0</blue>
       </color>
-      <min>-5800.0</min>
-      <max>5800.0</max>
+      <min>-11700.0</min>
+      <max>9100.0</max>
       <grid>false</grid>
       <autoscale>false</autoscale>
       <log_scale>false</log_scale>
@@ -85,8 +85,8 @@
         <green>0</green>
         <blue>0</blue>
       </color>
-      <min>-24.0</min>
-      <max>156.0</max>
+      <min>-150.0</min>
+      <max>282.0</max>
       <grid>false</grid>
       <autoscale>false</autoscale>
       <log_scale>false</log_scale>
@@ -102,8 +102,25 @@
         <green>0</green>
         <blue>0</blue>
       </color>
-      <min>250.0</min>
-      <max>3120.0</max>
+      <min>-1330.0</min>
+      <max>6040.0</max>
+      <grid>false</grid>
+      <autoscale>false</autoscale>
+      <log_scale>false</log_scale>
+    </axis>
+    <axis>
+      <visible>true</visible>
+      <name>Value 6</name>
+      <use_axis_name>false</use_axis_name>
+      <use_trace_names>true</use_trace_names>
+      <right>false</right>
+      <color>
+        <red>0</red>
+        <green>0</green>
+        <blue>0</blue>
+      </color>
+      <min>-12.0</min>
+      <max>824.0</max>
       <grid>false</grid>
       <autoscale>false</autoscale>
       <log_scale>false</log_scale>
@@ -238,31 +255,6 @@
       </archive>
     </pv>
     <pv>
-      <display_name>RE:ch0:MTR2:SETPOINT</display_name>
-      <visible>true</visible>
-      <name>RE:ch0:MTR2:SETPOINT</name>
-      <axis>2</axis>
-      <color>
-        <red>0</red>
-        <green>255</green>
-        <blue>255</blue>
-      </color>
-      <trace_type>AREA</trace_type>
-      <linewidth>2</linewidth>
-      <line_style>SOLID</line_style>
-      <point_type>NONE</point_type>
-      <point_size>2</point_size>
-      <waveform_index>0</waveform_index>
-      <period>0.0</period>
-      <ring_size>5000</ring_size>
-      <request>OPTIMIZED</request>
-      <archive>
-        <name>RDB</name>
-        <url>jdbc:mysql://192.168.3.95:3306/archive</url>
-        <key>1</key>
-      </archive>
-    </pv>
-    <pv>
       <display_name>RE:ch0:MTR1:POSITION</display_name>
       <visible>true</visible>
       <name>RE:ch0:MTR2:POSITION</name>
@@ -361,6 +353,26 @@
         <url>jdbc:mysql://192.168.3.95:3306/archive</url>
         <key>1</key>
       </archive>
+    </pv>
+    <pv>
+      <display_name>RE:ch0:ARDUINO:THERMISTOR</display_name>
+      <visible>true</visible>
+      <name>RE:ch0:ARDUINO:THERMISTOR</name>
+      <axis>5</axis>
+      <color>
+        <red>127</red>
+        <green>0</green>
+        <blue>255</blue>
+      </color>
+      <trace_type>AREA</trace_type>
+      <linewidth>2</linewidth>
+      <line_style>SOLID</line_style>
+      <point_type>NONE</point_type>
+      <point_size>2</point_size>
+      <waveform_index>0</waveform_index>
+      <period>0.0</period>
+      <ring_size>5000</ring_size>
+      <request>OPTIMIZED</request>
     </pv>
   </pvlist>
 </databrowser>

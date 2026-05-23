@@ -152,6 +152,13 @@ record(longin, "$(P)$(R)ARDUINO:LIGHT_RAW")
     field(EGU, "adc")
 }
 
+record(longin, "$(P)$(R)ARDUINO:THERMISTOR")
+{
+    field(DESC, "Thermistor raw ADC on A4")
+    field(SCAN, "Passive")
+    field(EGU, "adc")
+}
+
 record(longin, "$(P)$(R)ARDUINO:UPTIME_MS")
 {
     field(DESC, "Arduino uptime reported by firmware")

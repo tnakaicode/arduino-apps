@@ -39,7 +39,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 HOST = '0.0.0.0'
 WEB_PORT = 5000
-CAMERA_PORT = '/dev/video1'
+CAMERA_PORT = '/dev/video0'
 AUTO_CONNECT = True
 
 TARGET_FPS = 30.0
@@ -48,8 +48,12 @@ TIMELAPSE_VIDEO_FPS = 30.0
 CAPTURE_WIDTH = 1024
 CAPTURE_HEIGHT = 768
 CAPTURE_FORMATS = ['MJPG']
-CAPTURE_EXPOSURE = 120  # exposure_time_absolute; choose a visible brightness while keeping 30 FPS
-CAPTURE_DYNAMIC_FRAMERATE = True
+CAPTURE_AUTO_EXPOSURE = True
+CAPTURE_EXPOSURE = 120  # exposure_time_absolute; used only when manual exposure is enabled
+CAPTURE_BRIGHTNESS = 0  # 0 is neutral for this camera; raise only if light is still low
+CAPTURE_AUTO_WHITE_BALANCE = True
+CAPTURE_WHITE_BALANCE_TEMP = 4600
+CAPTURE_DYNAMIC_FRAMERATE = False  # enable V4L2 dynamic framerate control only if supported and stable
 
 # MJPG is preferred for 30 FPS capture on this UVC camera. YUYV is raw and usually heavier/slower.
 LASER_SAT_MIN = 150
@@ -694,29 +698,44 @@ class CameraRemoteServer:
             return
 
         try:
+            auto_exp_value = 3 if CAPTURE_AUTO_EXPOSURE else 1
+            cmd = [
+                'v4l2-ctl',
+                '-d',
+                str(self.camera_port),
+                f'--set-ctrl=auto_exposure={auto_exp_value}',
+                f'--set-ctrl=brightness={CAPTURE_BRIGHTNESS}',
+                f'--set-ctrl=white_balance_automatic={1 if CAPTURE_AUTO_WHITE_BALANCE else 0}',
+            ]
+            if not CAPTURE_AUTO_EXPOSURE:
+                cmd.append(f'--set-ctrl=exposure_time_absolute={CAPTURE_EXPOSURE}')
+            if not CAPTURE_AUTO_WHITE_BALANCE:
+                cmd.append(f'--set-ctrl=white_balance_temperature={CAPTURE_WHITE_BALANCE_TEMP}')
+
             subprocess.run(
-                [
-                    'v4l2-ctl',
-                    '-d',
-                    str(self.camera_port),
-                    '--set-ctrl=auto_exposure=1',
-                    f'--set-ctrl=exposure_time_absolute={CAPTURE_EXPOSURE}',
-                    '--set-ctrl=exposure_dynamic_framerate=1',
-                ],
+                cmd,
                 check=True,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
-            print(f'[Camera] enabled V4L2 dynamic framerate exposure={CAPTURE_EXPOSURE}')
+            print(
+                f'[Camera] enabled V4L2 controls auto_exposure={CAPTURE_AUTO_EXPOSURE} '
+                f'exposure={CAPTURE_EXPOSURE if not CAPTURE_AUTO_EXPOSURE else "auto"} '
+                f'brightness={CAPTURE_BRIGHTNESS} awb={CAPTURE_AUTO_WHITE_BALANCE}'
+            )
         except FileNotFoundError:
             print('[Camera] v4l2-ctl not installed; dynamic framerate disabled')
         except Exception as exc:
             print(f'[Camera] V4L2 dynamic framerate setup failed: {exc}')
 
     def _configure_camera(self, cap):
-        cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
-        if CAPTURE_EXPOSURE > 0:
+        cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3.0 if CAPTURE_AUTO_EXPOSURE else 1.0)
+        if not CAPTURE_AUTO_EXPOSURE and CAPTURE_EXPOSURE > 0:
             cap.set(cv2.CAP_PROP_EXPOSURE, CAPTURE_EXPOSURE)
+        cap.set(cv2.CAP_PROP_AUTO_WB, 1.0 if CAPTURE_AUTO_WHITE_BALANCE else 0.0)
+        if not CAPTURE_AUTO_WHITE_BALANCE:
+            cap.set(cv2.CAP_PROP_WHITE_BALANCE_BLUE_U, CAPTURE_WHITE_BALANCE_TEMP)
+        cap.set(cv2.CAP_PROP_BRIGHTNESS, CAPTURE_BRIGHTNESS)
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAPTURE_WIDTH)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAPTURE_HEIGHT)
 

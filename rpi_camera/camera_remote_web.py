@@ -20,6 +20,23 @@ from PIL import Image, ImageDraw, ImageFont
 #  cd /home/rpi/arduino-apps && nohup python rpi_camera/camera_remote_web.py > rpi_camera/camera_remote_web.nohup.log 2>&1 < /dev/null & echo $! && sleep 1 && pgrep -af "rpi_camera/camera_remote_web.py" && ss -lntp | grep ':5000' || true
 #  cd /home/rpi/arduino-apps && pkill -f rpi_camera/camera_remote_web.py || true && nohup python rpi_camera/camera_remote_web.py > rpi_camera/camera_remote_web.nohup.log 2>&1 < /dev/null & echo $! && sleep 1 && pgrep -af "rpi_camera/camera_remote_web.py" && ss -lntp | grep ':5000' || true
 
+# systemctl --user stop camera-remote-web.service
+# systemctl --user start camera-remote-web.service
+# 
+# 
+# lsof -i :5000
+#
+# rpi@rpi5:~ $ ps -fp 5623
+# UID          PID    PPID  C STIME TTY          TIME CMD
+# rpi         5623     883 36 May12 ?        8-16:24:07 /home/rpi/arduino-apps/venv/bin/python /home/rpi/arduino-apps/rpi_camera/camera_remote_web.py
+# rpi@rpi5:~ $ 
+# rpi@rpi5:~ $ 
+# rpi@rpi5:~ $ ps -fp 883
+# UID          PID    PPID  C STIME TTY          TIME CMD
+# rpi          883       1  0 May12 ?        00:00:00 /lib/systemd/systemd --user
+# rpi@rpi5:~ $ systemctl status 883 2>/dev/null
+# 
+
 HOST = '0.0.0.0'
 WEB_PORT = 5000
 CAMERA_PORT = '/dev/video1'
@@ -28,7 +45,13 @@ AUTO_CONNECT = True
 TARGET_FPS = 30.0
 TIMELAPSE_INTERVAL_SEC = 1.0
 TIMELAPSE_VIDEO_FPS = 30.0
+CAPTURE_WIDTH = 1024
+CAPTURE_HEIGHT = 768
+CAPTURE_FORMATS = ['MJPG']
+CAPTURE_EXPOSURE = 120  # exposure_time_absolute; choose a visible brightness while keeping 30 FPS
+CAPTURE_DYNAMIC_FRAMERATE = True
 
+# MJPG is preferred for 30 FPS capture on this UVC camera. YUYV is raw and usually heavier/slower.
 LASER_SAT_MIN = 150
 LASER_VAL_MIN = 200
 LASER_MAX_AREA = 150
@@ -659,6 +682,87 @@ class CameraRemoteServer:
                     continue
         return None
 
+    def _fourcc_to_str(self, code):
+        try:
+            v = int(code)
+        except Exception:
+            return '????'
+        return ''.join(chr((v >> (8 * i)) & 0xFF) for i in range(4))
+
+    def _ensure_v4l2_dynamic_framerate(self):
+        if not CAPTURE_DYNAMIC_FRAMERATE:
+            return
+
+        try:
+            subprocess.run(
+                [
+                    'v4l2-ctl',
+                    '-d',
+                    str(self.camera_port),
+                    '--set-ctrl=auto_exposure=1',
+                    f'--set-ctrl=exposure_time_absolute={CAPTURE_EXPOSURE}',
+                    '--set-ctrl=exposure_dynamic_framerate=1',
+                ],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            print(f'[Camera] enabled V4L2 dynamic framerate exposure={CAPTURE_EXPOSURE}')
+        except FileNotFoundError:
+            print('[Camera] v4l2-ctl not installed; dynamic framerate disabled')
+        except Exception as exc:
+            print(f'[Camera] V4L2 dynamic framerate setup failed: {exc}')
+
+    def _configure_camera(self, cap):
+        cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
+        if CAPTURE_EXPOSURE > 0:
+            cap.set(cv2.CAP_PROP_EXPOSURE, CAPTURE_EXPOSURE)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, CAPTURE_WIDTH)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, CAPTURE_HEIGHT)
+
+        for fmt in CAPTURE_FORMATS:
+            fourcc = cv2.VideoWriter_fourcc(*fmt)
+            cap.set(cv2.CAP_PROP_FOURCC, fourcc)
+            cap.set(cv2.CAP_PROP_FPS, self.target_fps)
+
+            actual_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            actual_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            actual_fps = cap.get(cv2.CAP_PROP_FPS)
+            actual_fmt = self._fourcc_to_str(cap.get(cv2.CAP_PROP_FOURCC))
+            actual_auto = cap.get(cv2.CAP_PROP_AUTO_EXPOSURE)
+            actual_expo = cap.get(cv2.CAP_PROP_EXPOSURE)
+
+            print(
+                f'[Camera] trying format={fmt} target={CAPTURE_WIDTH}x{CAPTURE_HEIGHT}@{self.target_fps}, '
+                f'actual={actual_w}x{actual_h}@{actual_fps:.1f} fmt={actual_fmt} '
+                f'auto_exposure={actual_auto} exposure={actual_expo}'
+            )
+
+            if actual_w == CAPTURE_WIDTH and actual_h == CAPTURE_HEIGHT and actual_fps >= 28.0:
+                print(f'[Camera] successful capture mode: {fmt}')
+                return
+
+        actual_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        actual_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        actual_fps = cap.get(cv2.CAP_PROP_FPS)
+        actual_fmt = self._fourcc_to_str(cap.get(cv2.CAP_PROP_FOURCC))
+        print(
+            f'[Camera] fallback capture mode: actual={actual_w}x{actual_h}@{actual_fps:.1f} fmt={actual_fmt}'
+        )
+
+    def _probe_camera_fps(self, cap, frames=10):
+        timestamps = []
+        for _ in range(frames):
+            ok, frame = cap.read()
+            if not ok or frame is None:
+                break
+            timestamps.append(time.perf_counter())
+        if len(timestamps) < 2:
+            return 0.0
+        intervals = [timestamps[i] - timestamps[i - 1] for i in range(1, len(timestamps))]
+        avg = sum(intervals) / len(intervals)
+        return 1.0 / avg if avg > 0 else 0.0
+
     def _has_non_ascii(self, text):
         try:
             text.encode('ascii')
@@ -725,7 +829,11 @@ class CameraRemoteServer:
                 f'failed to open camera port={self.camera_port}; tried: {details}'
             )
 
-        cap.set(cv2.CAP_PROP_FPS, self.target_fps)
+        self._ensure_v4l2_dynamic_framerate()
+        self._configure_camera(cap)
+        actual_fps = self._probe_camera_fps(cap, frames=8)
+        print(f'[Camera] measured capture fps={actual_fps:.1f}')
+
         self.cap = cap
         self.connected = True
 

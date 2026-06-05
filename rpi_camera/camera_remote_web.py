@@ -45,6 +45,7 @@ AUTO_CONNECT = True
 TARGET_FPS = 30.0
 TIMELAPSE_INTERVAL_SEC = 1.0
 TIMELAPSE_VIDEO_FPS = 30.0
+TIMELAPSE_MAX_FRAMES = 0  # 0 = no per-file frame limit
 CAPTURE_WIDTH = 1024
 CAPTURE_HEIGHT = 768
 CAPTURE_FORMATS = ['MJPG']
@@ -625,7 +626,9 @@ class CameraRemoteServer:
 
         self.timelapse_active = False
         self.timelapse_last_capture_ts = 0.0
-        self.timelapse_frames = []
+        self.timelapse_frame_count = 0
+        self.timelapse_output_path = None
+        self.timelapse_writer = None
         self.timelapse_lock = threading.Lock()
 
         self.target_fps = TARGET_FPS
@@ -917,7 +920,7 @@ class CameraRemoteServer:
             lines.append('REC')
         if self.timelapse_active:
           with self.timelapse_lock:
-            tl_count = len(self.timelapse_frames)
+            tl_count = self.timelapse_frame_count
           lines.append(f'TL ON ({tl_count})')
         if self.laser_enabled:
             lines.append('LASER ON')
@@ -1000,14 +1003,24 @@ class CameraRemoteServer:
                 self.latest_frame = draw
 
             with self.writer_lock:
-              if self.recording and self.video_writer is not None:
-                self.video_writer.write(draw)
+                if self.recording and self.video_writer is not None:
+                    try:
+                        self.video_writer.write(draw)
+                    except Exception as exc:
+                        print(f'[Recorder] failed to write frame: {exc}')
+                        self.video_writer.release()
+                        self.video_writer = None
+                        self.recording = False
 
-            if self.timelapse_active:
-                if now - self.timelapse_last_capture_ts >= TIMELAPSE_INTERVAL_SEC:
-                    with self.timelapse_lock:
-                        self.timelapse_frames.append(draw.copy())
-                    self.timelapse_last_capture_ts = now
+            if self.timelapse_active and now - self.timelapse_last_capture_ts >= TIMELAPSE_INTERVAL_SEC:
+                with self.timelapse_lock:
+                    try:
+                        self._write_timelapse_frame(draw)
+                    except Exception as exc:
+                        print(f'[Timelapse] failed to write frame: {exc}')
+                        self._cleanup_timelapse_writer(remove_file=False)
+                        self.timelapse_active = False
+                self.timelapse_last_capture_ts = now
 
             elapsed = time.perf_counter() - loop_start
             sleep_s = interval - elapsed
@@ -1024,6 +1037,44 @@ class CameraRemoteServer:
         if not cv2.imwrite(path, frame):
             raise RuntimeError('failed to save image')
         return path
+
+    def _cleanup_timelapse_writer(self, remove_file=False):
+        if self.timelapse_writer is not None:
+            self.timelapse_writer.release()
+            self.timelapse_writer = None
+
+        if remove_file and self.timelapse_output_path:
+            with contextlib.suppress(Exception):
+                os.remove(self.timelapse_output_path)
+
+        self.timelapse_output_path = None
+        self.timelapse_frame_count = 0
+
+    def _init_timelapse_writer(self, frame):
+        if self.timelapse_writer is not None:
+            return
+
+        h, w = frame.shape[:2]
+        path = os.path.join(self.out_dir, f'timelapse_{self._now_stamp()}.mp4')
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        writer = cv2.VideoWriter(path, fourcc, TIMELAPSE_VIDEO_FPS, (w, h))
+        if not writer.isOpened():
+            raise RuntimeError('failed to start timelapse writer')
+
+        self.timelapse_writer = writer
+        self.timelapse_output_path = path
+        self.timelapse_frame_count = 0
+
+    def _write_timelapse_frame(self, frame):
+        if self.timelapse_writer is None:
+            self._init_timelapse_writer(frame)
+
+        if TIMELAPSE_MAX_FRAMES > 0 and self.timelapse_frame_count >= TIMELAPSE_MAX_FRAMES:
+            self.timelapse_active = False
+            return
+
+        self.timelapse_writer.write(frame)
+        self.timelapse_frame_count += 1
 
     def start_recording(self):
         if self.recording:
@@ -1059,36 +1110,32 @@ class CameraRemoteServer:
         if self.timelapse_active:
             return None
         with self.timelapse_lock:
-            self.timelapse_frames = []
+            self._cleanup_timelapse_writer(remove_file=True)
+            self.timelapse_frame_count = 0
+            self.timelapse_output_path = None
         self.timelapse_last_capture_ts = 0.0
         self.timelapse_active = True
         return {'ok': True}
 
     def stop_timelapse(self, save=True):
         with self.timelapse_lock:
-            has_frames = bool(self.timelapse_frames)
-        if not self.timelapse_active and not has_frames:
+            if not self.timelapse_active and self.timelapse_writer is None:
+                return None
+            self.timelapse_active = False
+            frame_count = self.timelapse_frame_count
+            path = self.timelapse_output_path
+            if self.timelapse_writer is not None:
+                self.timelapse_writer.release()
+                self.timelapse_writer = None
+
+        if not save or frame_count == 0:
+            if path and os.path.exists(path):
+                with contextlib.suppress(Exception):
+                    os.remove(path)
+            self.timelapse_output_path = None
+            self.timelapse_frame_count = 0
             return None
 
-        self.timelapse_active = False
-
-        with self.timelapse_lock:
-            frames = list(self.timelapse_frames)
-            self.timelapse_frames = []
-
-        if not save or not frames:
-            return None
-
-        h, w = frames[0].shape[:2]
-        path = os.path.join(self.out_dir, f'timelapse_{self._now_stamp()}.mp4')
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        writer = cv2.VideoWriter(path, fourcc, TIMELAPSE_VIDEO_FPS, (w, h))
-        if not writer.isOpened():
-            raise RuntimeError('failed to start timelapse writer')
-
-        for frame in frames:
-            writer.write(frame)
-        writer.release()
         return path
 
     def update_laser_params(self, params: dict):
@@ -1128,6 +1175,8 @@ class CameraRemoteServer:
             'connected': self.connected,
             'recording': self.recording,
             'timelapse_active': self.timelapse_active,
+            'timelapse_frame_count': self.timelapse_frame_count,
+            'timelapse_output_path': self.timelapse_output_path,
             'laser_enabled': self.laser_enabled,
             'laser_params': {
                 'sat_min': self.laser_sat_min,
@@ -1284,7 +1333,7 @@ class CameraRemoteServer:
                 await response.write(encoded.tobytes())
                 await response.write(b'\r\n')
                 await asyncio.sleep(0.03)
-        except (asyncio.CancelledError, ConnectionResetError, RuntimeError):
+        except (asyncio.CancelledError, ConnectionResetError, BrokenPipeError, ConnectionError, OSError, RuntimeError):
             pass
         finally:
             with contextlib.suppress(Exception):

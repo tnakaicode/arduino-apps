@@ -5,7 +5,7 @@
   <update_period>3.0</update_period>
   <scroll_step>5</scroll_step>
   <scroll>true</scroll>
-  <start>-2 days -10 hours -54 minutes -56.399 seconds</start>
+  <start>-5 minutes -56 seconds</start>
   <end>now</end>
   <archive_rescale>STAGGER</archive_rescale>
   <foreground>
@@ -373,6 +373,11 @@
       <period>0.0</period>
       <ring_size>5000</ring_size>
       <request>OPTIMIZED</request>
+      <archive>
+        <name>RDB</name>
+        <url>jdbc:mysql://192.168.3.95:3306/archive</url>
+        <key>1</key>
+      </archive>
     </pv>
   </pvlist>
 </databrowser>

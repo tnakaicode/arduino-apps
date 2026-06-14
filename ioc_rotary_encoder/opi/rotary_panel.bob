@@ -284,6 +284,30 @@
     <width>1190</width>
     <height>808</height>
     <show_toolbar>true</show_toolbar>
+    <scripts>
+      <script file="EmbeddedPy">
+        <text><![CDATA[
+from org.csstudio.display.builder.runtime.script import PVUtil
+from org.csstudio.trends.databrowser3.export import SpreadsheetExportJob, Source, ValueFormatter
+from org.phoebus.archive.vtype import Style
+from org.phoebus.framework.jobs import JobManager
+
+if PVUtil.getDouble(pvs[0]) > 0:
+    pvs[0].write(0)
+    representation = widget.getUserData(widget.USER_DATA_REPRESENTATION)
+    db = representation.getDataBrowserModel()
+    r = db.getTimerange().toAbsoluteInterval()
+    exporter = SpreadsheetExportJob(
+        db, r.getStart(), r.getEnd(),
+        Source.PLOT, 0,
+        ValueFormatter(Style.Decimal, 3),
+        "D:/temp/data_browser_export.csv",
+        None, False)
+    JobManager.schedule("Save data", exporter)
+]]></text>
+        <pv_name trigger="true">loc://save(0)</pv_name>
+      </script>
+    </scripts>
   </widget>
   <widget type="label" version="2.0.0">
     <name>light_lbl_1</name>
@@ -301,5 +325,20 @@
     <y>490</y>
     <width>140</width>
     <height>24</height>
+  </widget>
+  <widget type="action_button" version="3.0.0">
+    <name>btn_export_csv</name>
+    <text>Export CSV</text>
+    <x>20</x>
+    <y>530</y>
+    <width>140</width>
+    <height>30</height>
+    <actions>
+      <action type="write_pv">
+        <pv_name>loc://save(0)</pv_name>
+        <value>1</value>
+        <description>Export DataBrowser to CSV</description>
+      </action>
+    </actions>
   </widget>
 </display>

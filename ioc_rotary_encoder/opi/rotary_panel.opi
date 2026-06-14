@@ -153,4 +153,59 @@
     <name>conn_val</name><pv_name>RE:ch0:ARDUINO:CONNECTED</pv_name>
     <x>530</x><y>416</y><width>120</width><height>24</height>
   </widget>
+
+  <!-- ======== Data Browser + CSV Export ======== -->
+  <widget typeId="org.csstudio.opibuilder.widgets.Label" version="1.0.0">
+    <name>db_hdr</name><text>Data Browser</text>
+    <x>680</x><y>12</y><width>280</width><height>24</height>
+    <font><fontdata fontName="Liberation Sans" height="14" style="1"/></font>
+  </widget>
+
+  <!-- DataBrowserWidget: script is triggered by loc://save(0) -->
+  <widget typeId="org.csstudio.trends.databrowser3.opiwidget.DataBrowserWidget" version="1.0.0">
+    <name>data_browser</name>
+    <filename>test.plt</filename>
+    <x>680</x><y>40</y><width>280</width><height>380</height>
+    <scripts>
+      <path pathString="EmbeddedPy" checkConnect="false">
+        <scriptText><![CDATA[
+from org.csstudio.display.builder.runtime.script import PVUtil
+from org.csstudio.trends.databrowser3.export import SpreadsheetExportJob, Source, ValueFormatter
+from org.phoebus.archive.vtype import Style
+from org.phoebus.framework.jobs import JobManager
+
+if PVUtil.getDouble(pvs[0]) > 0:
+    pvs[0].write(0)
+    representation = widget.getUserData(widget.USER_DATA_REPRESENTATION)
+    db = representation.getDataBrowserModel()
+    r = db.getTimerange().toAbsoluteInterval()
+    exporter = SpreadsheetExportJob(
+        db, r.getStart(), r.getEnd(),
+        Source.PLOT, 0,
+        ValueFormatter(Style.Decimal, 3),
+        "/tmp/data_browser_export.csv",
+        None, False)
+    JobManager.schedule("Save data", exporter)
+]]></scriptText>
+        <pvList>
+          <pv trig="true">loc://save(0)</pv>
+        </pvList>
+      </path>
+    </scripts>
+  </widget>
+
+  <!-- Button: writes 1 to loc://save to fire the script above -->
+  <widget typeId="org.csstudio.opibuilder.widgets.ActionButton" version="1.0.0">
+    <name>btn_export_csv</name>
+    <text>Export CSV</text>
+    <x>680</x><y>430</y><width>140</width><height>30</height>
+    <actions hook="false" hook_all="false">
+      <action type="WRITE_PV">
+        <pv_name>loc://save(0)</pv_name>
+        <value>1</value>
+        <description>Export DataBrowser to CSV</description>
+      </action>
+    </actions>
+  </widget>
+
 </display>

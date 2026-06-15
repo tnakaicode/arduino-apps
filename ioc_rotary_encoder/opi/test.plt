@@ -7,7 +7,6 @@
   <scroll>true</scroll>
   <start>-5 minutes -56 seconds</start>
   <end>now</end>
-  <archive_rescale>STAGGER</archive_rescale>
   <foreground>
     <red>0</red>
     <green>0</green>

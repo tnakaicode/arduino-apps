@@ -5,8 +5,9 @@
   <update_period>3.0</update_period>
   <scroll_step>5</scroll_step>
   <scroll>true</scroll>
-  <start>-5 minutes -56 seconds</start>
+  <start>-6 minutes -6 seconds</start>
   <end>now</end>
+  <archive_rescale>NONE</archive_rescale>
   <foreground>
     <red>0</red>
     <green>0</green>
@@ -33,8 +34,8 @@
         <green>0</green>
         <blue>0</blue>
       </color>
-      <min>-70600.0</min>
-      <max>12800.0</max>
+      <min>10966.0</min>
+      <max>11658.0</max>
       <grid>false</grid>
       <autoscale>false</autoscale>
       <log_scale>false</log_scale>
@@ -50,8 +51,8 @@
         <green>0</green>
         <blue>0</blue>
       </color>
-      <min>-697.0</min>
-      <max>239.0</max>
+      <min>-10.8</min>
+      <max>3.6</max>
       <grid>false</grid>
       <autoscale>false</autoscale>
       <log_scale>false</log_scale>
@@ -67,8 +68,8 @@
         <green>0</green>
         <blue>0</blue>
       </color>
-      <min>-11700.0</min>
-      <max>9100.0</max>
+      <min>-2350.0</min>
+      <max>1250.0</max>
       <grid>false</grid>
       <autoscale>false</autoscale>
       <log_scale>false</log_scale>
@@ -84,8 +85,8 @@
         <green>0</green>
         <blue>0</blue>
       </color>
-      <min>-150.0</min>
-      <max>282.0</max>
+      <min>-60.0</min>
+      <max>156.0</max>
       <grid>false</grid>
       <autoscale>false</autoscale>
       <log_scale>false</log_scale>
@@ -101,8 +102,8 @@
         <green>0</green>
         <blue>0</blue>
       </color>
-      <min>-1330.0</min>
-      <max>6040.0</max>
+      <min>382.0</min>
+      <max>513.0</max>
       <grid>false</grid>
       <autoscale>false</autoscale>
       <log_scale>false</log_scale>
@@ -118,8 +119,8 @@
         <green>0</green>
         <blue>0</blue>
       </color>
-      <min>-12.0</min>
-      <max>824.0</max>
+      <min>-2.0</min>
+      <max>114.0</max>
       <grid>false</grid>
       <autoscale>false</autoscale>
       <log_scale>false</log_scale>
@@ -149,7 +150,7 @@
       <request>OPTIMIZED</request>
       <archive>
         <name>RDB</name>
-        <url>jdbc:mysql://192.168.3.95:3306/archive</url>
+        <url>jdbc:mysql://192.168.3.102:3306/archive</url>
         <key>1</key>
       </archive>
     </pv>
@@ -174,7 +175,7 @@
       <request>OPTIMIZED</request>
       <archive>
         <name>RDB</name>
-        <url>jdbc:mysql://192.168.3.95:3306/archive</url>
+        <url>jdbc:mysql://192.168.3.102:3306/archive</url>
         <key>1</key>
       </archive>
     </pv>
@@ -199,7 +200,7 @@
       <request>OPTIMIZED</request>
       <archive>
         <name>RDB</name>
-        <url>jdbc:mysql://192.168.3.95:3306/archive</url>
+        <url>jdbc:mysql://192.168.3.102:3306/archive</url>
         <key>1</key>
       </archive>
     </pv>
@@ -224,7 +225,7 @@
       <request>OPTIMIZED</request>
       <archive>
         <name>RDB</name>
-        <url>jdbc:mysql://192.168.3.95:3306/archive</url>
+        <url>jdbc:mysql://192.168.3.102:3306/archive</url>
         <key>1</key>
       </archive>
     </pv>
@@ -249,7 +250,7 @@
       <request>OPTIMIZED</request>
       <archive>
         <name>RDB</name>
-        <url>jdbc:mysql://192.168.3.95:3306/archive</url>
+        <url>jdbc:mysql://192.168.3.102:3306/archive</url>
         <key>1</key>
       </archive>
     </pv>
@@ -274,7 +275,7 @@
       <request>OPTIMIZED</request>
       <archive>
         <name>RDB</name>
-        <url>jdbc:mysql://192.168.3.95:3306/archive</url>
+        <url>jdbc:mysql://192.168.3.102:3306/archive</url>
         <key>1</key>
       </archive>
     </pv>
@@ -299,7 +300,7 @@
       <request>OPTIMIZED</request>
       <archive>
         <name>RDB</name>
-        <url>jdbc:mysql://192.168.3.95:3306/archive</url>
+        <url>jdbc:mysql://192.168.3.102:3306/archive</url>
         <key>1</key>
       </archive>
     </pv>
@@ -324,7 +325,7 @@
       <request>OPTIMIZED</request>
       <archive>
         <name>RDB</name>
-        <url>jdbc:mysql://192.168.3.95:3306/archive</url>
+        <url>jdbc:mysql://192.168.3.102:3306/archive</url>
         <key>1</key>
       </archive>
     </pv>
@@ -349,7 +350,7 @@
       <request>OPTIMIZED</request>
       <archive>
         <name>RDB</name>
-        <url>jdbc:mysql://192.168.3.95:3306/archive</url>
+        <url>jdbc:mysql://192.168.3.102:3306/archive</url>
         <key>1</key>
       </archive>
     </pv>
@@ -374,7 +375,7 @@
       <request>OPTIMIZED</request>
       <archive>
         <name>RDB</name>
-        <url>jdbc:mysql://192.168.3.95:3306/archive</url>
+        <url>jdbc:mysql://192.168.3.102:3306/archive</url>
         <key>1</key>
       </archive>
     </pv>

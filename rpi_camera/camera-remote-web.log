@@ -480,3 +480,71 @@ ConnectionError: Connection lost
 [Camera] trying format=MJPG target=1024x768@30.0, actual=1024x768@30.0 fmt=MJPG auto_exposure=3.0 exposure=78.0
 [Camera] successful capture mode: MJPG
 [Camera] measured capture fps=12.5
+Unhandled exception
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/aiohttp/web_protocol.py", line 609, in start
+    resp, reset = await task
+                  ^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/aiohttp/web_protocol.py", line 542, in _handle_request
+    resp, reset = await self.finish_response(request, resp, start_time)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/aiohttp/web_protocol.py", line 720, in finish_response
+    await prepare_meth(request)
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/aiohttp/web_fileresponse.py", line 288, in prepare
+    return await self._prepare_open_file(request, fobj, st, file_encoding)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/aiohttp/web_fileresponse.py", line 418, in _prepare_open_file
+    return await self._sendfile(request, fobj, offset, count)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/aiohttp/web_fileresponse.py", line 147, in _sendfile
+    await loop.sendfile(transport, fobj, offset, count)
+  File "/usr/lib/python3.11/asyncio/base_events.py", line 1185, in sendfile
+    return await self._sendfile_native(transport, file,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/asyncio/selector_events.py", line 725, in _sendfile_native
+    return await self.sock_sendfile(transp._sock, file, offset, count,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/asyncio/base_events.py", line 881, in sock_sendfile
+    return await self._sock_sendfile_native(sock, file,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/asyncio/unix_events.py", line 373, in _sock_sendfile_native
+    return await fut
+           ^^^^^^^^^
+  File "/usr/lib/python3.11/asyncio/unix_events.py", line 395, in _sock_sendfile_native_impl
+    sent = os.sendfile(fd, fileno, offset, blocksize)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 113] No route to host
+Unhandled exception
+Traceback (most recent call last):
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/aiohttp/web_protocol.py", line 609, in start
+    resp, reset = await task
+                  ^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/aiohttp/web_protocol.py", line 542, in _handle_request
+    resp, reset = await self.finish_response(request, resp, start_time)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/aiohttp/web_protocol.py", line 720, in finish_response
+    await prepare_meth(request)
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/aiohttp/web_fileresponse.py", line 288, in prepare
+    return await self._prepare_open_file(request, fobj, st, file_encoding)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/aiohttp/web_fileresponse.py", line 418, in _prepare_open_file
+    return await self._sendfile(request, fobj, offset, count)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/rpi/arduino-apps/venv/lib/python3.11/site-packages/aiohttp/web_fileresponse.py", line 147, in _sendfile
+    await loop.sendfile(transport, fobj, offset, count)
+  File "/usr/lib/python3.11/asyncio/base_events.py", line 1185, in sendfile
+    return await self._sendfile_native(transport, file,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/asyncio/selector_events.py", line 725, in _sendfile_native
+    return await self.sock_sendfile(transp._sock, file, offset, count,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/asyncio/base_events.py", line 881, in sock_sendfile
+    return await self._sock_sendfile_native(sock, file,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.11/asyncio/unix_events.py", line 373, in _sock_sendfile_native
+    return await fut
+           ^^^^^^^^^
+  File "/usr/lib/python3.11/asyncio/unix_events.py", line 395, in _sock_sendfile_native_impl
+    sent = os.sendfile(fd, fileno, offset, blocksize)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [Errno 113] No route to host

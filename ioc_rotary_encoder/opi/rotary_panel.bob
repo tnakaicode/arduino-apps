@@ -291,17 +291,20 @@ from org.csstudio.display.builder.runtime.script import PVUtil
 from org.csstudio.trends.databrowser3.export import SpreadsheetExportJob, Source, ValueFormatter
 from org.phoebus.archive.vtype import Style
 from org.phoebus.framework.jobs import JobManager
+import datetime
 
 if PVUtil.getDouble(pvs[0]) > 0:
     pvs[0].write(0)
     representation = widget.getUserData(widget.USER_DATA_REPRESENTATION)
     db = representation.getDataBrowserModel()
     r = db.getTimerange().toAbsoluteInterval()
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_file = "D:/temp/data_" + timestamp + ".csv"
     exporter = SpreadsheetExportJob(
         db, r.getStart(), r.getEnd(),
         Source.PLOT, 0,
         ValueFormatter(Style.Decimal, 3),
-        "D:/temp/data_browser_export.csv",
+        output_file,
         None, False)
     JobManager.schedule("Save data", exporter)
 ]]></text>

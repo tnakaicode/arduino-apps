@@ -1,6 +1,9 @@
 import lgpio
 import time
 
+# grep -i pwm /boot/firmware/config.txt
+# echo "dtoverlay=pwm-2chan,pin=12,func=4,pin2=13,func2=4" | sudo tee -a /boot/firmware/config.txt
+
 GPIO1 = 12  # ハードウェアPWM対応ピン (物理ピン32)
 GPIO2 = 13  # ハードウェアPWM対応ピン (物理ピン33)
 CHIP = 4  # Raspberry Pi 5 は gpiochip4
@@ -25,11 +28,13 @@ try:
     set_angle(h, GPIO2, 180)
 
     print("2. 中央から±5度で小さく振ります")
-    set_angle(h, GPIO1, 180-5)
-    set_angle(h, GPIO2, 180-5)
+    set_angle(h, GPIO1, 180-15)
+    set_angle(h, GPIO2, 180-15)
+    time.sleep(5)
 
-    set_angle(h, GPIO1, 180-10)
-    set_angle(h, GPIO2, 180-10)
+    set_angle(h, GPIO1, 180-30)
+    set_angle(h, GPIO2, 180-30)
+    time.sleep(1)
 
     print("3. 中央に戻して終了します")
     set_angle(h, GPIO1, 180)

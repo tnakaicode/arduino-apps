@@ -1,42 +1,48 @@
+import lgpio
 import time
-from gpiozero import AngularServo
 
-# MG996Rのパルス幅（0.5ms〜2.5ms）
-MIN_PW = 0.0005
-MAX_PW = 0.0025
+GPIO1 = 20
+GPIO2 = 21
+CHIP = 4  # Raspberry Pi 5 は gpiochip4
 
-print("サーボ初期化中 (GPIO 20, 21)...")
-# pin_factoryの指定を削除（ラズパイ5標準のlgpioが自動適用されます）
-servo1 = AngularServo(20, min_angle=0, max_angle=180, min_pulse_width=MIN_PW, max_pulse_width=MAX_PW)
-servo2 = AngularServo(21, min_angle=0, max_angle=180, min_pulse_width=MIN_PW, max_pulse_width=MAX_PW)
+def set_angle(h, gpio, angle):
+    """0〜180度をパルス幅（500〜2500μs）に変換してサーボ制御"""
+    pulse_us = int(500 + (angle / 180.0) * 2000)
+    lgpio.tx_servo(h, gpio, pulse_us)
+
+h = lgpio.gpiochip_open(CHIP)
+lgpio.gpio_claim_output(h, GPIO1)
+lgpio.gpio_claim_output(h, GPIO2)
 
 try:
+    print("サーボ初期化中 (GPIO 20, 21)...")
+
     print("1. まずは中央（90度）へ")
-    servo1.angle = 90
-    servo2.angle = 90
+    set_angle(h, GPIO1, 90)
+    set_angle(h, GPIO2, 90)
     time.sleep(2)
 
     print("2. 交互に左右に振ります")
-    servo1.angle = 0
+    set_angle(h, GPIO1, 0)
     time.sleep(1)
-    servo2.angle = 180
+    set_angle(h, GPIO2, 180)
     time.sleep(2)
 
-    servo1.angle = 180
+    set_angle(h, GPIO1, 180)
     time.sleep(1)
-    servo2.angle = 0
+    set_angle(h, GPIO2, 0)
     time.sleep(2)
 
     print("3. 中央に戻して終了します")
-    servo1.angle = 90
-    servo2.angle = 90
+    set_angle(h, GPIO1, 90)
+    set_angle(h, GPIO2, 90)
     time.sleep(1)
 
 except KeyboardInterrupt:
     print("\n中断されました")
 
 finally:
-    # サーボをフリー状態にする
-    servo1.detach()
-    servo2.detach()
+    lgpio.tx_servo(h, GPIO1, 0)
+    lgpio.tx_servo(h, GPIO2, 0)
+    lgpio.gpiochip_close(h)
     print("プログラムを終了しました。")

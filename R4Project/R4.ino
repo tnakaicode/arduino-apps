@@ -23,3 +23,7 @@ void loop() {
     }
   }
 }
+
+//  & "C:\Program Files\Arduino CLI\arduino-cli.exe" core install arduino:renesas_uno
+// Get-Content R4.cpp | & "C:\Program Files\Arduino CLI\arduino-cli.exe" compile --fqbn arduino:renesas_uno:unor4wifi --build-path ./build -
+// & "C:\Program Files\Arduino CLI\arduino-cli.exe" upload -p COM5 --fqbn arduino:renesas_uno:unor4wifi --input-dir ./build

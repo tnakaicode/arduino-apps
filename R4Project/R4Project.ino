@@ -2,8 +2,8 @@
 
 ArduinoLEDMatrix matrix;
 
-// LEDの点灯状態を保持するバッファ（12行分）
-uint8_t frame[12] = {0};
+// 1. 最新の loadFrame が要求する「32ビット×3個（計12バイト）」の型に変更
+uint32_t frame[3] = {0};
 int byteCount = 0;
 
 void setup() {
@@ -14,16 +14,17 @@ void setup() {
 void loop() {
   // LabVIEWから12バイト（全行分）のデータが届いたらLEDを更新
   while (Serial.available() > 0) {
-    frame[byteCount] = Serial.read();
+    // 2. 32ビット配列のメモリに対して、1バイトずつ受信データを詰め込む
+    ((uint8_t*)frame)[byteCount] = Serial.read();
     byteCount++;
 
     if (byteCount >= 12) {
-      matrix.renderFrame(frame); // LEDマトリクスを表示更新
-      byteCount = 0;             // カウンタをリセット
+      matrix.loadFrame(frame); // ★最新仕様の loadFrame に32ビット配列を渡す
+      byteCount = 0;           // カウンタをリセット
     }
   }
 }
 
-//  & "C:\Program Files\Arduino CLI\arduino-cli.exe" core install arduino:renesas_uno
-// Get-Content R4.cpp | & "C:\Program Files\Arduino CLI\arduino-cli.exe" compile --fqbn arduino:renesas_uno:unor4wifi --build-path ./build -
+// & "C:\Program Files\Arduino CLI\arduino-cli.exe" core install arduino:renesas_uno
+// & "C:\Program Files\Arduino CLI\arduino-cli.exe" compile --fqbn arduino:renesas_uno:unor4wifi --build-path ./build R4Project.ino
 // & "C:\Program Files\Arduino CLI\arduino-cli.exe" upload -p COM5 --fqbn arduino:renesas_uno:unor4wifi --input-dir ./build

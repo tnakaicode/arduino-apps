@@ -7,7 +7,4 @@ arduino_wifi/wifi_config.h
 pico2w_epics_ioc/wifi_config.h
 pico2w_epics_ioc/build/*
 R4Project/.R4.UserState/debug.lvprojstate
-R4Project/build/build.options.json
-R4Project/build/includes.cache
-R4Project/build/libraries.cache
-R4Project/build/sketch/R4Project.ino.cpp
+R4Project/build/**

@@ -16,7 +16,6 @@ from PyQt5.QtWidgets import (
     QDoubleSpinBox,
     QTextEdit,
 )
-from PyQt5.QtCore import QTimer
 
 
 # ==========================================
@@ -59,49 +58,37 @@ class JDS2900Driver:
             print(f"通信エラー: {e}")
             return ""
 
-    # --- 書き込み(制御)コマンド群 ---
+    # --- マニュアルに準拠した正しい一括送信型コマンド群 ---
     def set_output(self, ch1_on: bool, ch2_on: bool):
-        """両チャンネルの出力を個別に指定する (マニュアル正しい仕様)
-        :w20=CH1_ON,CH2_ON. (1=ON, 0=OFF)
-        """
+        """:w20=CH1状態,CH2状態. (1=ON, 0=OFF)"""
         c1 = 1 if ch1_on else 0
         c2 = 1 if ch2_on else 0
         return self._send(f":w20={c1},{c2}.")
 
-    def set_waveform(self, channel: int, wave_type: int):
-        """波形を設定 (CH1: :w21, CH2: :w22)"""
-        cmd_num = 21 if channel == 1 else 22
-        return self._send(f":w{cmd_num}={wave_type}.")
+    def set_waveforms(self, ch1_wave: int, ch2_wave: int):
+        """:w21=CH1波形,CH2波形."""
+        return self._send(f":w21={ch1_wave},{ch2_wave}.")
 
     def set_frequency(self, channel: int, freq_hz: float):
-        """周波数を設定 (CH1: :w23, CH2: :w24)"""
+        """周波数のみコマンド番号が完全に独立しています (CH1=23, CH2=24)"""
         cmd_num = 23 if channel == 1 else 24
         freq_val = int(freq_hz * 100)  # 0.01Hz単位
         return self._send(f":w{cmd_num}={freq_val},0.")
 
-    def set_amplitude(self, channel: int, amp_v: float):
-        """振幅を設定 (CH1: :w25, CH2: :w26)"""
-        cmd_num = 25 if channel == 1 else 26
-        amp_val = int(amp_v * 1000)  # mV単位
-        return self._send(f":w{cmd_num}={amp_val}.")
+    def set_amplitudes(self, ch1_amp_v: float, ch2_amp_v: float):
+        """:w25=CH1振幅,CH2振幅. (単位: mV)"""
+        a1 = int(ch1_amp_v * 1000)
+        a2 = int(ch2_amp_v * 1000)
+        return self._send(f":w25={a1},{a2}.")
 
-    def set_offset(self, channel: int, offset_v: float):
-        """DCオフセットを設定 (CH1: :w27, CH2: :w28)"""
-        cmd_num = 27 if channel == 1 else 28
-        offset_val = int((offset_v + 10.0) * 100)
-        return self._send(f":w{cmd_num}={offset_val}.")
+    def set_offsets(self, ch1_offset_v: float, ch2_offset_v: float):
+        """:w26=CH1オフセット,CH2オフセット."""
+        o1 = int((ch1_offset_v + 10.0) * 100)
+        o2 = int((ch2_offset_v + 10.0) * 100)
+        return self._send(f":w26={o1},{o2}.")
 
-    # --- 読み出し(状態取得)コマンド群 ---
     def get_device_info(self):
         return self._send(":r00=0.")
-
-    def get_output_status(self):
-        """出力ON/OFF状態を取得 (:r20=0.) -> 戻り値: 例 :R20=1,0."""
-        res = self._send(":r20=0.")
-        if res.upper().startswith(":R20="):
-            cleaned = res.upper().replace(":R20=", "").replace(".", "")
-            return cleaned.split(",")  # ['1', '0'] のような配列を返す
-        return None
 
 
 # ==========================================
@@ -110,19 +97,24 @@ class JDS2900Driver:
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("JUNTEK JDS-2900 Controller")
-        self.setGeometry(100, 100, 900, 500)
+        self.setWindowTitle("JUNTEK JDS-2900 Independent Controller")
+        self.setGeometry(100, 100, 850, 450)
 
         self.dev = JDS2900Driver()
-        self.ch1_active = False
-        self.ch2_active = False
+
+        # 相手側の既存の値を壊さずにペア送信するため、現在のGUI設定値を完全にキャッシュ
+        self.cache = {
+            "ch1_on": False,
+            "ch2_on": False,
+            "ch1_wave": 0,
+            "ch2_wave": 0,
+            "ch1_amp": 5.0,
+            "ch2_amp": 5.0,
+            "ch1_offset": 0.0,
+            "ch2_offset": 0.0,
+        }
 
         self.init_ui()
-
-        # モニタ用タイマー（出力ON/OFF状態のみを安全に同期）
-        self.monitor_timer = QTimer()
-        self.monitor_timer.timeout.connect(self.update_monitor)
-
         self.set_controls_enabled(False)
         self.refresh_com_ports()
 
@@ -147,14 +139,16 @@ class MainWindow(QMainWindow):
         conn_layout.addWidget(self.btn_connect)
         main_layout.addLayout(conn_layout)
 
-        # コントロール
+        # コントロールパネル（左右独立構造）
         ctrl_layout = QHBoxLayout()
 
+        # CH1 グループ
         self.ch1_box = QGroupBox("Channel 1 (CH1) 制御")
         ch1_grid = QGridLayout(self.ch1_box)
         self.setup_channel_ui(ch1_grid, channel=1)
         ctrl_layout.addWidget(self.ch1_box)
 
+        # CH2 グループ
         self.ch2_box = QGroupBox("Channel 2 (CH2) 制御")
         ch2_grid = QGridLayout(self.ch2_box)
         self.setup_channel_ui(ch2_grid, channel=2)
@@ -162,89 +156,101 @@ class MainWindow(QMainWindow):
 
         main_layout.addLayout(ctrl_layout)
 
-        # ボトム（モニタ表示 ＆ ログ）
-        bottom_layout = QHBoxLayout()
-
-        monitor_box = QGroupBox("リアルタイム出力モニタ")
-        monitor_layout = QGridLayout(monitor_box)
-        self.lbl_mon_ch1_out = QLabel("CH1 出力: --")
-        self.lbl_mon_ch2_out = QLabel("CH2 出力: --")
-        self.lbl_mon_ch1_out.setStyleSheet("font-size: 14px; font-weight: bold;")
-        self.lbl_mon_ch2_out.setStyleSheet("font-size: 14px; font-weight: bold;")
-        monitor_layout.addWidget(self.lbl_mon_ch1_out, 0, 0)
-        monitor_layout.addWidget(self.lbl_mon_ch2_out, 0, 1)
-        bottom_layout.addWidget(monitor_box, 40)
-
+        # 通信ログエリア
         log_box = QGroupBox("通信ログ")
         log_layout = QVBoxLayout(log_box)
         self.log_text = QTextEdit()
         self.log_text.setReadOnly(True)
         log_layout.addWidget(self.log_text)
-        bottom_layout.addWidget(log_box, 60)
-
-        main_layout.addLayout(bottom_layout)
+        main_layout.addWidget(log_box)
 
     def setup_channel_ui(self, grid, channel):
+        # 波形
         grid.addWidget(QLabel("波形型:"), 0, 0)
         wave_combo = QComboBox()
         wave_combo.addItems(["正弦波 (Sine)", "矩形波 (Square)", "三角波 (Triangle)"])
         wave_combo.currentIndexChanged.connect(
-            lambda idx, ch=channel: self.send_waveform(ch, idx)
+            lambda idx, ch=channel: self.on_waveform_changed(ch, idx)
         )
         grid.addWidget(wave_combo, 0, 1)
-        if channel == 1:
-            self.ch1_wave = wave_combo
-        else:
-            self.ch2_wave = wave_combo
 
+        # 周波数
         grid.addWidget(QLabel("周波数 (Hz):"), 1, 0)
         freq_spin = QDoubleSpinBox()
         freq_spin.setRange(0.01, 15000000.0)
         freq_spin.setValue(1000.0)
         freq_spin.setDecimals(2)
+        freq_spin.setSingleStep(100.0)
         freq_spin.valueChanged.connect(
-            lambda val, ch=channel: self.send_frequency(ch, val)
+            lambda val, ch=channel: self.on_frequency_changed(ch, val)
         )
         grid.addWidget(freq_spin, 1, 1)
-        if channel == 1:
-            self.ch1_freq = freq_spin
-        else:
-            self.ch2_freq = freq_spin
 
+        # 振幅
         grid.addWidget(QLabel("振幅 (Vpp):"), 2, 0)
         amp_spin = QDoubleSpinBox()
         amp_spin.setRange(0.001, 20.0)
         amp_spin.setValue(5.0)
+        amp_spin.setSingleStep(0.1)
         amp_spin.valueChanged.connect(
-            lambda val, ch=channel: self.send_amplitude(ch, val)
+            lambda val, ch=channel: self.on_amplitude_changed(ch, val)
         )
         grid.addWidget(amp_spin, 2, 1)
-        if channel == 1:
-            self.ch1_amp = amp_spin
-        else:
-            self.ch2_amp = amp_spin
 
+        # オフセット
+        grid.addWidget(QLabel("オフセット (V):"), 3, 0)
+        offset_spin = QDoubleSpinBox()
+        offset_spin.setRange(-10.0, 10.0)
+        offset_spin.setValue(0.0)
+        offset_spin.setSingleStep(0.1)
+        offset_spin.valueChanged.connect(
+            lambda val, ch=channel: self.on_offset_changed(ch, val)
+        )
+        grid.addWidget(offset_spin, 3, 1)
+
+        # 出力ボタン
         btn_out = QPushButton(f"CH{channel} Output: OFF")
         btn_out.setStyleSheet("background-color: #ffcccc;")
-        btn_out.clicked.connect(lambda: self.toggle_output(channel))
-        grid.addWidget(btn_out, 3, 0, 1, 2)
+        btn_out.clicked.connect(lambda: self.on_output_toggled(channel))
+        grid.addWidget(btn_out, 4, 0, 1, 2)
+
         if channel == 1:
             self.btn_ch1_out = btn_out
         else:
             self.btn_ch2_out = btn_out
 
-    # --- 独立したコマンド送信処理 (シグナル競合防止) ---
-    def send_waveform(self, ch, idx):
+    # --- キャッシュの値を合成して、相手側の設定を壊さずに送信するロジック ---
+    def on_waveform_changed(self, ch, idx):
+        self.cache[f"ch{ch}_wave"] = idx
         if self.dev.is_connected():
-            self.dev.set_waveform(ch, idx)
+            res = self.dev.set_waveforms(self.cache["ch1_wave"], self.cache["ch2_wave"])
+            self.log(f"波形設定変更 (応答: {res})")
 
-    def send_frequency(self, ch, val):
+    def on_frequency_changed(self, ch, val):
         if self.dev.is_connected():
-            self.dev.set_frequency(ch, val)
+            res = self.dev.set_frequency(ch, val)  # 周波数のみ単独コマンド
+            self.log(f"CH{ch} 周波数設定変更 -> {val} Hz (応答: {res})")
 
-    def send_amplitude(self, ch, val):
+    def on_amplitude_changed(self, ch, val):
+        self.cache[f"ch{ch}_amp"] = val
         if self.dev.is_connected():
-            self.dev.set_amplitude(ch, val)
+            res = self.dev.set_amplitudes(self.cache["ch1_amp"], self.cache["ch2_amp"])
+            self.log(f"振幅設定変更 (応答: {res})")
+
+    def on_offset_changed(self, ch, val):
+        self.cache[f"ch{ch}_offset"] = val
+        if self.dev.is_connected():
+            res = self.dev.set_offsets(
+                self.cache["ch1_offset"], self.cache["ch2_offset"]
+            )
+            self.log(f"オフセット設定変更 (応答: {res})")
+
+    def on_output_toggled(self, ch):
+        self.cache[f"ch{ch}_on"] = not self.cache[f"ch{ch}_on"]
+        if self.dev.is_connected():
+            res = self.dev.set_output(self.cache["ch1_on"], self.cache["ch2_on"])
+            self.log(f"CH{ch} 出力状態切り替え (応答: {res})")
+        self.update_output_button_styles()
 
     def refresh_com_ports(self):
         self.combo_port.clear()
@@ -263,77 +269,47 @@ class MainWindow(QMainWindow):
                 self.log(f"デバイス応答: {info}")
                 self.btn_connect.setText("切断")
                 self.btn_connect.setStyleSheet("background-color: #ffcdd2;")
+                self.combo_port.setEnabled(False)
+                self.btn_refresh.setEnabled(False)
                 self.set_controls_enabled(True)
-                self.monitor_timer.start(1000)
+            else:
+                self.log(f"ポート {target_port} への接続に失敗しました。")
         else:
             self.disconnect_device()
 
     def disconnect_device(self):
-        self.monitor_timer.stop()
         self.dev.disconnect()
         self.log("デバイスを切断しました。")
         self.btn_connect.setText("接続")
         self.btn_connect.setStyleSheet("background-color: #e1f5fe;")
+        self.combo_port.setEnabled(True)
+        self.btn_refresh.setEnabled(True)
         self.set_controls_enabled(False)
-        self.lbl_mon_ch1_out.setText("CH1 出力: --")
-        self.lbl_mon_ch2_out.setText("CH2 出力: --")
+
+        # 状態リセット
+        self.cache["ch1_on"] = False
+        self.cache["ch2_on"] = False
+        self.update_output_button_styles()
 
     def set_controls_enabled(self, enabled: bool):
         self.ch1_box.setEnabled(enabled)
         self.ch2_box.setEnabled(enabled)
 
-    def toggle_output(self, channel):
-        if channel == 1:
-            self.ch1_active = not self.ch1_active
-        else:
-            self.ch2_active = not self.ch2_active
-        self.dev.set_output(self.ch1_active, self.ch2_active)
-        self.update_output_button_styles()
-
     def update_output_button_styles(self):
-        # GUI部品のイベント発火を防ぐため、一時的にシグナルをブロック
-        self.btn_ch1_out.blockSignals(True)
-        self.btn_ch2_out.blockSignals(True)
-
-        if self.ch1_active:
+        # CH1
+        if self.cache["ch1_on"]:
             self.btn_ch1_out.setText("CH1 Output: ON")
             self.btn_ch1_out.setStyleSheet("background-color: #ccffcc;")
-            self.lbl_mon_ch1_out.setText("CH1 出力: ON")
         else:
             self.btn_ch1_out.setText("CH1 Output: OFF")
             self.btn_ch1_out.setStyleSheet("background-color: #ffcccc;")
-            self.lbl_mon_ch1_out.setText("CH1 出力: OFF")
-
-        if self.ch2_active:
+        # CH2
+        if self.cache["ch2_on"]:
             self.btn_ch2_out.setText("CH2 Output: ON")
             self.btn_ch2_out.setStyleSheet("background-color: #ccffcc;")
-            self.lbl_mon_ch2_out.setText("CH2 出力: ON")
         else:
             self.btn_ch2_out.setText("CH2 Output: OFF")
             self.btn_ch2_out.setStyleSheet("background-color: #ffcccc;")
-            self.lbl_mon_ch2_out.setText("CH2 出力: OFF")
-
-        self.btn_ch1_out.blockSignals(False)
-        self.btn_ch2_out.blockSignals(False)
-
-    def update_monitor(self):
-        """定期的に機器から出力状態のみを安全に同期"""
-        status_data = self.dev.get_output_status()
-        if status_data and len(status_data) >= 2:
-            try:
-                # 機器から返ってきた独立したON/OFF状態（'1' または '0'）を取得
-                ch1_status_hardware = status_data[0] == "1"
-                ch2_status_hardware = status_data[1] == "1"
-
-                # 現在の内部状態と異なる場合のみ更新（無駄な書き込みループを防ぐ）
-                if (self.ch1_active != ch1_status_hardware) or (
-                    self.ch2_active != ch2_status_hardware
-                ):
-                    self.ch1_active = ch1_status_hardware
-                    self.ch2_active = ch2_status_hardware
-                    self.update_output_button_styles()
-            except Exception:
-                pass
 
     def log(self, message):
         self.log_text.append(f"[{time.strftime('%H:%M:%S')}] {message}")

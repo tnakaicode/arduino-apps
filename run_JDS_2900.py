@@ -26,6 +26,7 @@ class JDS2900Driver:
         self.port = port
         self.baudrate = baudrate
         self.ser = None
+        self.ch_output_states = [False, False]  # CH1, CH2 の出力状態を保持
 
     def connect(self, port=None):
         if port:
@@ -33,6 +34,12 @@ class JDS2900Driver:
         try:
             self.ser = serial.Serial(self.port, self.baudrate, timeout=0.5)
             time.sleep(1.0)  # 接続安定待ち
+            # 全ての同期モード(Sync/Tracking)を強制解除
+            self._send(":w32=0,0,0,0.")  # パラメータ同期解除
+            self._send(":w33=0.")  # 出力同期解除 (1だとCH2がCH1に追従する)
+            self._send(":w34=0.")  # 追従解除
+            self._send(":w38=0.")  # 追従関連解除
+            print(f"Connected to {self.port}. ALL Sync/Tracking modes forced to OFF.")
             return True
         except Exception as e:
             print(f"接続エラー: {e}")
@@ -51,41 +58,75 @@ class JDS2900Driver:
             return ""
         try:
             full_cmd = f"{cmd}\r\n".encode("utf-8")
+            print(f"Terminal: [TX] {cmd}")  # 送信コマンドをログ出力
             self.ser.write(full_cmd)
             res = self.ser.readline().decode("utf-8").strip()
+            print(f"Terminal: [RX] {res}")  # 応答をログ出力
             return res
         except Exception as e:
-            print(f"通信エラー: {e}")
+            print(f"Terminal: [ERROR] 通信エラー: {e}")
             return ""
 
-    # --- マニュアルに準拠した正しい一括送信型コマンド群 ---
-    def set_output(self, ch1_on: bool, ch2_on: bool):
-        """:w20=CH1状態,CH2状態. (1=ON, 0=OFF)"""
-        c1 = 1 if ch1_on else 0
-        c2 = 1 if ch2_on else 0
-        return self._send(f":w20={c1},{c2}.")
+    def set_output(self, channel: int, on: bool):
+        """
+        JDS-2900 Firmware v15 (r00=15) 独立制御の再挑戦:
+        18/38はハズレ(物理ONしない)。
+        20番がCH1出力、21番がCH2出力である可能性を、波形(w21)との衝突を考慮しつつ検証。
+        """
+        val = 1 if on else 0
 
-    def set_waveforms(self, ch1_wave: int, ch2_wave: int):
-        """:w21=CH1波形,CH2波形."""
-        return self._send(f":w21={ch1_wave},{ch2_wave}.")
+        # 現在の状態を把握するために読み出し
+        print(f"Terminal: --- CH{channel} {'ON' if on else 'OFF'} Search Sequence ---")
+
+        # 以前の調査で :w20=1,0. を送った時にCH1=ON, CH2=OFF になったことから、
+        # 20=CH1_OUT, 21=CH2_OUT の可能性が極めて高い。
+        # ただし、set_waveform(CH1) も w21 を使っているため、ここが衝突の原因。
+
+        if channel == 1:
+            cmd_str = f":w20={val}."
+        else:
+            # 21番がCH2出力であるかを確認
+            cmd_str = f":w21={val}."
+
+        res = self._send(cmd_str)
+
+        time.sleep(0.1)
+        self._send(":r20=0.")  # CH1 status?
+        self._send(":r21=0.")  # CH2 status or CH1 Wave? 変化をチェック
+
+        return res
+
+    def set_waveform(self, channel: int, wave_idx: int):
+        """:w21=CH1波形, :w22=CH2波形."""
+        cmd_num = 21 if channel == 1 else 22
+        return self._send(f":w{cmd_num}={wave_idx}.")
 
     def set_frequency(self, channel: int, freq_hz: float):
-        """周波数のみコマンド番号が完全に独立しています (CH1=23, CH2=24)"""
+        """CH1=23, CH2=24."""
         cmd_num = 23 if channel == 1 else 24
-        freq_val = int(freq_hz * 100)  # 0.01Hz単位
+        freq_val = int(freq_hz * 100)
         return self._send(f":w{cmd_num}={freq_val},0.")
 
-    def set_amplitudes(self, ch1_amp_v: float, ch2_amp_v: float):
-        """:w25=CH1振幅,CH2振幅. (単位: mV)"""
-        a1 = int(ch1_amp_v * 1000)
-        a2 = int(ch2_amp_v * 1000)
-        return self._send(f":w25={a1},{a2}.")
+    def set_amplitude(self, channel: int, amp_v: float):
+        """:w25=CH1, :w26=CH2. (単位: mV)"""
+        cmd_num = 25 if channel == 1 else 26
+        amp_mv = int(amp_v * 1000)
+        return self._send(f":w{cmd_num}={amp_mv}.")
 
-    def set_offsets(self, ch1_offset_v: float, ch2_offset_v: float):
-        """:w26=CH1オフセット,CH2オフセット."""
-        o1 = int((ch1_offset_v + 10.0) * 100)
-        o2 = int((ch2_offset_v + 10.0) * 100)
-        return self._send(f":w26={o1},{o2}.")
+    def set_offset(self, channel: int, offset_v: float):
+        """:w27=CH1, :w28=CH2. (単位: 0.01V, オフセット10Vベース)"""
+        cmd_num = 27 if channel == 1 else 28
+        offset_val = int((offset_v + 10.0) * 100)
+        return self._send(f":w{cmd_num}={offset_val}.")
+        # -10V -> 0, 0V -> 1000, +10V -> 2000
+        offset_val = int((offset_v + 10.0) * 100)
+        return self._send(f":w{cmd_num}={offset_val}.")
+
+    def set_duty_cycle(self, channel: int, duty: float):
+        """:w29=CH1, :w30=CH2. (単位: 0.1%)"""
+        cmd_num = 29 if channel == 1 else 30
+        duty_val = int(duty * 10)
+        return self._send(f":w{cmd_num}={duty_val}.")
 
     def get_device_info(self):
         return self._send(":r00=0.")
@@ -168,7 +209,19 @@ class MainWindow(QMainWindow):
         # 波形
         grid.addWidget(QLabel("波形型:"), 0, 0)
         wave_combo = QComboBox()
-        wave_combo.addItems(["正弦波 (Sine)", "矩形波 (Square)", "三角波 (Triangle)"])
+        # JDS-2900の標準的な波形インデックスに合わせる
+        # 0: Sine, 1: Square, 2: Pulse, 3: Triangle, ...
+        wave_combo.addItems(
+            [
+                "0: 正弦波 (Sine)",
+                "1: 矩形波 (Square)",
+                "2: パルス波 (Pulse)",
+                "3: 三角波 (Triangle)",
+                "4: 部分正弦波 (Partial Sine)",
+                "5: CMOS",
+                "6: 直流 (DC)",
+            ]
+        )
         wave_combo.currentIndexChanged.connect(
             lambda idx, ch=channel: self.on_waveform_changed(ch, idx)
         )
@@ -211,7 +264,7 @@ class MainWindow(QMainWindow):
         # 出力ボタン
         btn_out = QPushButton(f"CH{channel} Output: OFF")
         btn_out.setStyleSheet("background-color: #ffcccc;")
-        btn_out.clicked.connect(lambda: self.on_output_toggled(channel))
+        btn_out.clicked.connect(lambda _, ch=channel: self.on_output_toggled(ch))
         grid.addWidget(btn_out, 4, 0, 1, 2)
 
         if channel == 1:
@@ -219,37 +272,37 @@ class MainWindow(QMainWindow):
         else:
             self.btn_ch2_out = btn_out
 
-    # --- キャッシュの値を合成して、相手側の設定を壊さずに送信するロジック ---
+    # --- 独立したコマンドを各更新時に送信 ---
     def on_waveform_changed(self, ch, idx):
         self.cache[f"ch{ch}_wave"] = idx
         if self.dev.is_connected():
-            res = self.dev.set_waveforms(self.cache["ch1_wave"], self.cache["ch2_wave"])
-            self.log(f"波形設定変更 (応答: {res})")
+            res = self.dev.set_waveform(ch, idx)
+            self.log(f"CH{ch} 波形設定変更 -> {idx} (応答: {res})")
 
     def on_frequency_changed(self, ch, val):
         if self.dev.is_connected():
-            res = self.dev.set_frequency(ch, val)  # 周波数のみ単独コマンド
+            res = self.dev.set_frequency(ch, val)
             self.log(f"CH{ch} 周波数設定変更 -> {val} Hz (応答: {res})")
 
     def on_amplitude_changed(self, ch, val):
         self.cache[f"ch{ch}_amp"] = val
         if self.dev.is_connected():
-            res = self.dev.set_amplitudes(self.cache["ch1_amp"], self.cache["ch2_amp"])
-            self.log(f"振幅設定変更 (応答: {res})")
+            res = self.dev.set_amplitude(ch, val)
+            self.log(f"CH{ch} 振幅設定変更 -> {val} V (応答: {res})")
 
     def on_offset_changed(self, ch, val):
         self.cache[f"ch{ch}_offset"] = val
         if self.dev.is_connected():
-            res = self.dev.set_offsets(
-                self.cache["ch1_offset"], self.cache["ch2_offset"]
-            )
-            self.log(f"オフセット設定変更 (応答: {res})")
+            res = self.dev.set_offset(ch, val)
+            self.log(f"CH{ch} オフセット設定変更 -> {val} V (応答: {res})")
 
     def on_output_toggled(self, ch):
         self.cache[f"ch{ch}_on"] = not self.cache[f"ch{ch}_on"]
         if self.dev.is_connected():
-            res = self.dev.set_output(self.cache["ch1_on"], self.cache["ch2_on"])
-            self.log(f"CH{ch} 出力状態切り替え (応答: {res})")
+            res = self.dev.set_output(ch, self.cache[f"ch{ch}_on"])
+            self.log(
+                f"CH{ch} 出力状態切り替え -> {self.cache[f'ch{ch}_on']} (応答: {res})"
+            )
         self.update_output_button_styles()
 
     def refresh_com_ports(self):
